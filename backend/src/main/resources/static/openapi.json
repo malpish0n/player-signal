@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PlayerSignal local alpha",
-    "version": "0.8.0",
-    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404. Local rules are the default analysis provider; paid OpenAI requires explicit opt-in. New source features require migrations V8–V16. This contract describes source, not the previously built runtime. Dynamic administrative maps use extensible object schemas. Alerts, sharing and retention remain disabled until explicitly configured. Semantic embeddings are optional local-only adapters; thresholds are not quality-validated."
+    "version": "0.9.0",
+    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every non-webhook mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404. Local rules are the default analysis provider; paid OpenAI requires explicit opt-in. Local runtime migrated through V17 after backup. Stripe sandbox only; live keys are rejected. /api/billing/webhook authenticates the raw body with Stripe-Signature, independently of session/CSRF. Dynamic administrative maps use extensible object schemas. Alerts, sharing and retention remain disabled until explicitly configured. Semantic embeddings are optional local-only adapters; thresholds are not quality-validated."
   },
   "paths": {
     "/api/games": {
@@ -3974,6 +3974,129 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RetentionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/billing": {
+      "get": {
+        "summary": "Owner: current sandbox plan and actual Stripe prices",
+        "responses": {
+          "200": {
+            "description": "Billing state or hosted redirect; webhook returns received=true"
+          },
+          "400": {
+            "description": "Invalid request or webhook signature"
+          },
+          "503": {
+            "description": "Stripe unavailable, missing configuration or permission"
+          }
+        }
+      }
+    },
+    "/api/workspace/billing/checkout": {
+      "post": {
+        "summary": "Owner: create or resume idempotent sandbox checkout",
+        "responses": {
+          "200": {
+            "description": "Billing state or hosted redirect; webhook returns received=true"
+          },
+          "400": {
+            "description": "Invalid request or webhook signature"
+          },
+          "503": {
+            "description": "Stripe unavailable, missing configuration or permission"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "plan"
+                ],
+                "properties": {
+                  "plan": {
+                    "type": "string",
+                    "enum": [
+                      "INDIE",
+                      "STUDIO"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/billing/portal": {
+      "post": {
+        "summary": "Owner: open sandbox customer portal",
+        "responses": {
+          "200": {
+            "description": "Billing state or hosted redirect; webhook returns received=true"
+          },
+          "400": {
+            "description": "Invalid request or webhook signature"
+          },
+          "503": {
+            "description": "Stripe unavailable, missing configuration or permission"
+          }
+        }
+      }
+    },
+    "/api/workspace/billing/refresh": {
+      "post": {
+        "summary": "Owner: reconcile authoritative subscription state",
+        "responses": {
+          "200": {
+            "description": "Billing state or hosted redirect; webhook returns received=true"
+          },
+          "400": {
+            "description": "Invalid request or webhook signature"
+          },
+          "503": {
+            "description": "Stripe unavailable, missing configuration or permission"
+          }
+        }
+      }
+    },
+    "/api/billing/webhook": {
+      "post": {
+        "summary": "Signed sandbox raw-body webhook; no browser session required",
+        "responses": {
+          "200": {
+            "description": "Billing state or hosted redirect; webhook returns received=true"
+          },
+          "400": {
+            "description": "Invalid request or webhook signature"
+          },
+          "503": {
+            "description": "Stripe unavailable, missing configuration or permission"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Stripe-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
               }
             }
           }

@@ -2,7 +2,7 @@
 
 ## Current verification boundary
 
-The owner requested no automated tests or builds for the latest implementation batch. Frontend static type/lint inspection may be used without producing an application build. New backend/frontend source is not in the currently running Docker images. Do not treat an old localhost screen or a previous passing test count as verification of these changes. A build, migration rehearsal through V16, authorization checks and restore drill remain release gates before publishing.
+On 2026-10-01 the owner explicitly approved a build and restart without automated tests. Both application images built, a private database backup was created, and migrations V8–V17 applied successfully to the local V7 database. Readiness, game/review/overview/comparison/settings reads and weekly report creation/idempotent retry were checked manually. Local Stripe sandbox and Ollama setup is documented in `local-billing-ai.md`. This is not full production acceptance; a restore drill and the broader authorization/quality checks remain outstanding.
 
 ## Deployment template
 
@@ -42,4 +42,4 @@ The script refuses a database with existing application tables and restores in o
 
 ## External services intentionally deferred
 
-Stripe checkout/webhooks, email transport, domain provisioning, external monitoring/alerts are not active. Expiring report-share endpoints are implemented but no report has been shared or publicly deployed. No payment plans or delivery guarantees are advertised. Operator/legal review, dependency/security scans, source-terms review, production acceptance and local-model quality evaluation remain required before a commercial launch.
+Stripe sandbox source is installed; local webhook activation requires its CLI permission/signing secret. Live Stripe, email transport, domain provisioning and external monitoring are not active. Expiring report-share endpoints are implemented but no report has been shared or publicly deployed. No payment plans or delivery guarantees are advertised. Operator/legal review, dependency/security scans, source-terms review, production acceptance and local-model quality evaluation remain required before a commercial launch.

@@ -1,6 +1,6 @@
 # Manual quality and release review
 
-## Current evidence
+## Initial evidence (superseded runtime status in operations.md)
 
 On 2026-10-01 a read-only local database inspection returned migration V7, Portal 2 with 1,000 imported reviews and Counter-Strike: Source with zero. Ollama was not found on the command PATH. New source and migrations V8–V16 were not run. These facts do not satisfy a 3–5-game quality gate, and no accuracy, semantic grouping quality, responsiveness or latency result is claimed.
 
@@ -25,3 +25,7 @@ Walk through a known update using equal complete UTC windows. Verify the denomin
 - Check source evidence, filtering, CSV, saved views, report creation/retry, browser print and mobile keyboard navigation in the updated app, including errors and empty states.
 
 Record actual observations, failures and fixes with commit/model versions. Leave unmet criteria open; this document is a review procedure, not evidence that the checks passed.
+
+## Updated runtime evidence — 2026-10-01
+
+The owner later approved builds/restart. Images built, V8–V17 migrations applied after a backup, and core API/UI reads plus report creation and idempotent retry passed manual checks. Ollama qwen3:4b inference ran on imported Portal 2 reviews. The initial sample exposed a humor/category false positive; prompt v2 clarifies concrete actionability and technical performance. This small diagnostic sample is not an accuracy benchmark or completion of the 3–5-game review. Automated tests were not run.

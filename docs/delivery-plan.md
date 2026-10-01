@@ -1,22 +1,33 @@
-# Remaining delivery scope
+# Delivery status — 2026-10-01
 
-Owner instruction (2026-10-01): proceed in coherent steps and commit each; do not run automated tests or builds. Static lint/type inspection is separate and produces no application build. Record manual/static verification honestly. The running Docker images cannot verify new Java/Next production code until a later build is authorized. Prior passing checks do not validate new changes.
+Owner constraints: implement locally, commit each coherent step, no paid OpenAI calls, no automated test suites or application builds. Hosting/domain, Stripe and email accounts are deferred. Static type/lint/configuration inspection is permitted and produces no application build.
 
-Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email accounts will be set up later. Prepare local functionality and deployment/integration boundaries; do not claim external integrations are live or publish anything.
+The latest source implements the local workflow below. Implemented does not mean production acceptance: the running database was inspected read-only and is still at V7, while source migrations extend through V16. No new schedules, alerts, sharing or deletion rules were activated. No publication, paid model call, model download, push or data deletion was performed.
 
-| Package | Status |
-| --- | --- |
-| Durable analysis quota / usage counters | Implemented; static review only |
-| Free local analysis and optional local model | Implemented adapters; static review only; local model installation/quality evaluation pending |
-| Issue analytics, scoring and exploration | Per-issue timeline/share/priority and manual workflow implemented; static review only; category/status/issue filters implemented; semantic quality pending |
-| Full patch comparison | Category/issue shares and timeline implemented; static review only |
-| Saved weekly reports / evidence summaries | Deterministic snapshots implemented; static review only; AI executive synthesis not implemented |
-| Onboarding and UI completion | Preview/confirm/import and guided processing implemented; E2E/accessibility/performance acceptance not run |
-| Public landing and legal drafts | Implemented; owner/legal review and publication deferred |
-| Deployment, monitoring, backups | Templates/scripts/runbook implemented; no deployment or restore drill; hosting deferred by owner |
-| Billing | External integration deferred by owner |
-| Scheduled work and notifications | Opt-in dispatcher/local analysis/weekly snapshots and in-app notices implemented; runtime verification and email/spike alerts pending |
-| Teams / operations / saved product preferences | Membership, manual invites, workspace jobs, workflow and saved views implemented; security runtime acceptance pending |
-| Data controls and sharing | Bounded export and explicit game/account deletion implemented; public share links and retention automation pending |
+| Package | Source status | Remaining acceptance / external dependency |
+| --- | --- | --- |
+| Usage and quotas | Durable reservations and workspace attempt limits | Concurrency/runtime checks on updated app |
+| Review analysis | Real-data English rules v2; optional local Ollama; paid adapter gated off | Install/pin local model if desired; 3–5-game quality review |
+| Issue intelligence | Lexical default; optional cached semantic vectors; trends, priority, workflow and filters | Evaluate semantic threshold and false merges/splits |
+| Patch comparisons | UTC windows, category/issue shares, evidence timeline | Runtime validation of changing source coverage |
+| Reports | Weekly/patch snapshots, preserved evidence, Markdown and print/PDF | Deterministic brief is the no-provider alternative; generative synthesis remains optional and unimplemented |
+| Onboarding/UI | Preview/confirm/import, processing guidance, saved views | Manual updated-app walkthrough, responsive/accessibility review |
+| Landing/legal | Public product pages and clearly marked drafts | Owner/legal review and publication |
+| Deployment/operations | HTTPS template, logs/request IDs, backup/empty restore scripts | Hosting and actual backup/restore drill |
+| Billing | Not enabled | Stripe/account/plan decisions deferred by owner |
+| Notifications | Opt-in local pipelines, weekly snapshots, failures and growth alerts | Updated-app dispatch/recovery verification; email delivery deferred |
+| Teams/preferences | Workspace roles, manual token invites, job visibility and saved views | Runtime authorization/revocation checks; email verification/recovery deferred |
+| Data controls/sharing | Bounded export, game/account deletion, expiring/revocable report links, previewed opt-in retention | Runtime expiry/revocation/deletion/cascade checks |
 
-A–E are implemented alpha slices, not completed production acceptance. The 3–5 game quality gate, semantic clustering evaluation and end-to-end release verification remain open. Rules-based classification must never be labeled as AI or synthetic fixtures injected into live data.
+## What passed in this batch
+
+Frontend TypeScript and ESLint inspection; Compose parsing for local, production and optional local-model overlay; shell script syntax and Git whitespace checks. Backend SQL/Java/security flow was reviewed manually, not compiled or executed. Existing passing tests from older commits do not cover these changes.
+
+## Next release boundary
+
+1. Run updated application images and rehearse migrations on an isolated copy before modifying the live database.
+2. Walk through login/roles, reports/sharing, schedules, retention and failure recovery on disposable data.
+3. Complete the manual 3–5-game quality review described in `quality-review.md` with the chosen local provider and pinned model.
+4. Configure deferred hosting, email and billing only when the owner supplies those decisions. Complete legal and operational acceptance before a public paid launch.
+
+Post-v1 Discord/Reddit/Jira/Linear integrations remain out of scope. Model-generated executive prose is not presented as implemented; the shipped source uses transparent evidence-derived briefs.

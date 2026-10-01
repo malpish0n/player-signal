@@ -83,7 +83,7 @@ V1 creates the historical application schema; V5 renames it to `playersignal` wi
 
 ## Connect and import a game
 
-Open the home page, enter a Steam App ID or full HTTPS store URL, then click **Connect game**. Verify the game name and click **Sync reviews**. The explorer shows real page-level progress and supports recommendation/language filters and pagination.
+Open the home page, enter a Steam App ID or full HTTPS store URL, then click **Connect game**. Verify the game name and click **Sync reviews**. The explorer shows saved import progress and supports text, recommendation, language, UTC date, current category/status and issue filters, with consistent pagination and CSV export.
 
 Each run imports at most `STEAM_MAX_PAGES` pages (default 10 × 100 reviews). **Resume import** continues a PARTIAL or FAILED run from its last saved page. A fresh scan after COMPLETED checks for new and edited reviews. `STEAM_PAGE_DELAY_MS` defaults to 500; retries are bounded. Only two imports run at once. Limits are environment-configurable in Compose.
 
@@ -91,18 +91,11 @@ Run status remains visible on failure; existing reviews are retained. Raw source
 
 ## Classify reviews (milestone C)
 
-The separate `/demo` page uses four synthetic examples and deterministic rules. It makes no AI calls and does not write to the database. Imported reviews remain unanalyzed until OpenAI is configured.
+The separate `/demo` page contains synthetic examples and never writes to the database. Live imported reviews use conservative English phrase rules by default (`ANALYSIS_PROVIDER=local`); those rules are not an AI model and leave unmatched text explicitly unclassified. Keep `ALLOW_PAID_AI=false`. No paid provider is needed for the local workflow.
 
-To enable live analysis, set these values in your local, ignored `.env`:
+Choose **Analyze next batch** in Processing after running an updated application image. Default batch size is 25, configurable from 1–100. Optional Ollama classification and semantic grouping use an independently installed local model; see the local-mode sections below. The OpenAI adapter is dormant unless its provider, model, key and paid-call opt-in are all deliberately configured. It was not called during this work.
 
-```dotenv
-ANALYSIS_PROVIDER=openai
-OPENAI_API_KEY=<your key>
-OPENAI_MODEL=gpt-4o-mini-2024-07-18
-ANALYSIS_MAX_REVIEWS=25
-```
-
-Recreate the backend with `docker compose --env-file .env -f infra/docker-compose.yml up -d backend`, then choose **Analyze next batch** on the game page. This sends review text and language to OpenAI; Steam author IDs and raw payloads are not sent. Calls incur provider charges. A batch processes at most 25 reviews by default (configurable 1–100), with up to three requests per eligible uncached review. There is one analysis worker per backend process and one database lock per game. Analysis is manual, not automatically triggered by import.
+Analysis is manual by default. Optional per-game automation imports, analyzes one local batch and groups issues. Durable usage quotas count attempts, including retries; cache hits and skipped reviews do not consume attempts.
 
 Results include sentiment, category, severity, confidence, actionable/likely-bug flags, issue summary, exact source quotes and tags. Expand a review's analysis to inspect evidence and the actual response model. Confidence is a model estimate, not a calibrated probability. Empty/generic/oversized input is skipped with a reason. Failed items need **Retry failed + pending**; provider configuration failures stop the batch.
 
@@ -132,7 +125,7 @@ Accounts are opt-in. The current installation keeps `AUTH_ENABLED=false`, preser
 
 Existing local data is not assigned to the first person registering. A deliberate operator-controlled data migration is required to move it into an account; no transfer UI is included yet. Disabling accounts exposes only the original local workspace, never private account workspaces.
 
-Sessions and login throttling are held in one backend process. Restarting it signs users out. Throttling is 8 attempts per normalized email and 30 per remote IP per 5 minutes; the Next.js proxy shares its backend IP. Distributed sessions/rate limits, email verification, password recovery, team invitations and a full deployment review remain before public beta.
+Sessions and login throttling are held in one backend process. Restarting it signs users out. Throttling is 8 attempts per normalized email and 30 per remote IP per 5 minutes; the Next.js proxy shares its backend IP. Distributed sessions/rate limits, email verification, password recovery, email invitation delivery and a full deployment review remain before public beta.
 
 The product, UI, packages, Java namespace, application schema and Compose project are now PlayerSignal. Historical Flyway V1–V4 remain immutable. This upgraded installation retains its existing database login/name and external volume identifiers in ignored `.env` so data survives the rename; new installations use PlayerSignal defaults. Never overwrite an existing `.env` with the example during upgrade.
 
@@ -173,3 +166,11 @@ OpenAI is blocked unless **both** `ANALYSIS_PROVIDER=openai` and `ALLOW_PAID_AI=
 Use `EMBEDDING_PROVIDER=ollama`, `EMBEDDING_MODEL=<installed embedding model>` and a local `OLLAMA_URL`. Keep `OLLAMA_NO_CLOUD=1` on the Ollama server. The optional `infra/local-models.compose.yml` overlay configures that flag and private service access; it does not install or download a model. The default remains lexical, without model calls. No Ollama executable was found on PATH during this implementation.
 
 The adapter follows [Ollama's embedding API](https://docs.ollama.com/api/embed), validates finite normalized vectors and equal dimensions, caches by analysis/input/model/revision and never falls back to a hosted service. Rebuilds preserve old grouping on failure. Threshold 0.78 is an unevaluated starting point, not a quality guarantee. Pin the installed model and change `EMBEDDING_REVISION` when its weights change. Cached vectors are deleted with their source analyses. One request has a 35-second deadline and 32 MiB response cap; larger/cold models can fail visibly. Cloud disabling follows the [official local-only configuration](https://docs.ollama.com/faq#how-do-i-disable-ollama-cloud-features).
+
+### Reports, alerts and retention
+
+Reports supports private weekly snapshots; Before & after can save patch snapshots. Summaries are deterministic evidence briefs, not generated AI assessments. Owners can explicitly create a 1/7/30-day read-only link, replace it or revoke it. Links reveal only the selected game name, period, brief and preserved source excerpts. They do not grant workspace access. Copies already downloaded cannot be recalled; localhost URLs are not remotely accessible until hosting is configured.
+
+Processing contains opt-in high-severity growth alerts and owner-only retention settings. Alert evaluation uses complete UTC weeks, minimum coverage and a non-stale grouping; no email is sent. Local rules assign only medium severity, so high-severity alerts generally require model classifications reviewed by a human. Retention requires a preview and explicit confirmation before enabling daily deletion. Old reviews and reports use separate periods; saved reports can preserve old source quotes. Purging reviews clears groups for a later rebuild. A later Steam import may reintroduce old reviews. Both features remain inactive by default.
+
+Current source includes migrations through V16. The running local database inspected on 2026-10-01 was still at V7. No application builds, migrations or automated tests were run for the latest batch. See `docs/delivery-plan.md` and `docs/quality-review.md` before treating these changes as release-ready.

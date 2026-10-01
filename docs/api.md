@@ -17,7 +17,7 @@ Runs expose status, timestamps, fetched/inserted/updated counts, resume cursor a
 
 Error shape: `{code,message,requestId}`. Invalid input is 400; missing game 404; conflicting import 409; Steam failure 502; unavailable worker 503. Previously committed pages remain readable on failure.
 
-The frontend forwards only allowlisted game, demo and authentication routes through its same-origin `/api` handler; it rejects cross-origin POSTs. No wildcard CORS or browser-held backend secrets.
+The frontend forwards only allowlisted game, workspace, shared-report, demo and authentication routes through its same-origin `/api` handler; it rejects cross-origin POSTs. No wildcard CORS or browser-held backend secrets.
 
 Health endpoints remain `/actuator/health`, `/actuator/health/readiness` (includes PostgreSQL) and `/actuator/health/liveness` (process only).
 
@@ -37,7 +37,7 @@ Run states: RUNNING, COMPLETED, PARTIAL (unprocessed input remains), COMPLETED_W
 ## Milestone D: issue intelligence
 
 - `GET /api/games/{game}/issues?page=0&size=20`: paginated issue summaries ordered by severity score, mentions, ID. Includes snapshot metadata, current eligible count and staleness. Missing snapshot has `builtAt:null`.
-- `POST /api/games/{game}/issues/rebuild`: synchronously rebuild up to 2000 current actionable analyses, returning the first issue page. Uses local lexical embeddings, no external calls. 409 for concurrent rebuild; 422 over the cap; 503 on failure with the old snapshot preserved.
+- `POST /api/games/{game}/issues/rebuild`: synchronously rebuild up to 2000 current actionable analyses, returning the first issue page. Uses lexical vectors by default; optional Ollama embeddings call only the configured local model origin. 409 for concurrent rebuild; 422 over the cap; 503 on failure with the old snapshot preserved.
 - `GET /api/games/{game}/issues/{issue}?page=0&size=20`: metrics and exact evidence snapshots, IDs, classification, model/prompt and similarity. Wrong-game IDs return 404. Page size is 1–100.
 - `GET /api/issues/demo`: fixed six-review synthetic corpus through the same engine, three groups, no writes. Reference time is explicitly supplied.
 
@@ -107,3 +107,21 @@ Comparison `signals` includes provider/model, analyzedBefore/analyzedAfter, grou
 ### Report snapshots
 
 `GET /api/games/{game}/reports` lists up to 100 snapshots; `GET /api/games/{game}/reports/{id}` returns metadata and immutable payload. `POST /api/games/{game}/reports/generate` accepts `{type:"WEEKLY",requestId:"UUID"}` or `{type:"PATCH",date:"YYYY-MM-DD",days:7,requestId:"UUID"}`. Reuse the same requestId only when retrying the same creation request. Weekly means the last seven complete UTC days versus the preceding seven. Report creation uses a serializable transaction; concurrent serialization failures may be retried. Reports contain deterministic summaries, not AI claims, and source excerpts remain available if later grouping replaces issue IDs. Authorization/CSRF follow the game routes.
+
+## Local completion endpoints (source contract, not the old running image)
+
+The OpenAPI source describes usage, current-classification review filters, report snapshots, workflow/trends, saved views, membership/operations, data export/deletion and automation. New additions:
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| GET / POST | /api/games/{id}/alerts | Read/save disabled-by-default in-app growth alerts |
+| POST | /api/games/{id}/alerts/check | Evaluate enabled policy with minimum coverage and daily deduplication |
+| GET / POST | /api/games/{id}/reports/{reportId}/share | Owner reads status or explicitly creates/replaces expiring token |
+| POST | /api/games/{id}/reports/{reportId}/share/revoke | Owner revokes the current link |
+| GET | /api/shared-reports/{token} | Anonymous allowlisted snapshot projection; no-store, no-referrer, noindex; bounded global reads |
+| GET / POST | /api/games/{id}/retention | Owner reads/configures disabled-by-default retention |
+| POST | /api/games/{id}/retention/preview | Count candidate deletions without deleting data |
+
+Game/workspace mutation routes require the applicable role and CSRF token in account mode. Ownership filtering does not apply to the separate shared-report endpoint; a cryptographic, expiring, non-revoked capability token authorizes only that projected report. Deletion of a report/game also deletes its share.
+
+Semantic snapshot identity is `ollama-centroid-v1:<model>@<revision>` plus its stored threshold. Model/revision/threshold changes mark existing groups stale. Embeddings are cached by analysis/model/revision/text hash and cascade with source analysis deletion.

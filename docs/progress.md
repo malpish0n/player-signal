@@ -294,3 +294,7 @@ Before & after now saves PATCH snapshots using the selected date/window and a pe
 ## Conservative local rule correction
 
 Static review found that the global negation check suppressed the explicitly supported phrases “controller doesn't work” and “audio does not work”. Negation is now checked outside the matched failure phrase, so “no longer”/“fixed” still suppress a match while failure wording itself is allowed. Bumped local analysis identity to local-rules-v2 to avoid serving cached v1 results under changed semantics. Manual source walkthrough only, no executed classification test.
+
+## Local completion contract and release boundary
+
+Updated OpenAPI through V16 (alerts, report sharing and retention), removed obsolete OpenAI-first setup guidance, and documented semantic configuration, optional cloud-disabled model runtime and the manual quality procedure. Read-only environment inspection confirmed the running database remains at V7 with one populated game; no new source features or 3–5-game model evaluation can be claimed as runtime-verified. Delivery status now separates implemented local source, optional generative synthesis, acceptance work, and explicitly deferred external services.

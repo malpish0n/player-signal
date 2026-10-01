@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PlayerSignal local alpha",
-    "version": "0.7.0",
-    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404. Local rules are the default analysis provider; paid OpenAI requires explicit opt-in. New source features require migrations V8–V12. This contract describes source, not the previously built runtime. Dynamic administrative maps use extensible object schemas."
+    "version": "0.8.0",
+    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404. Local rules are the default analysis provider; paid OpenAI requires explicit opt-in. New source features require migrations V8–V16. This contract describes source, not the previously built runtime. Dynamic administrative maps use extensible object schemas. Alerts, sharing and retention remain disabled until explicitly configured. Semantic embeddings are optional local-only adapters; thresholds are not quality-validated."
   },
   "paths": {
     "/api/games": {
@@ -879,7 +879,7 @@
         }
       ],
       "post": {
-        "summary": "Atomically replace clusters from current actionable analyses; local lexical vectors",
+        "summary": "Atomically rebuild issue groups using configured lexical or local semantic vectors",
         "responses": {
           "200": {
             "description": "Success",
@@ -3339,6 +3339,646 @@
           }
         }
       }
+    },
+    "/api/games/{id}/alerts": {
+      "get": {
+        "summary": "Read opt-in issue alert policy",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        }
+      },
+      "post": {
+        "summary": "Enable or disable in-app issue growth alerts",
+        "description": "OWNER or ADMIN; CSRF required in account mode. Defaults disabled. No email delivery.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/alerts/check": {
+      "post": {
+        "summary": "Evaluate growth alerts now",
+        "description": "Requires enabled policy. Current non-stale grouping; two full UTC weeks; 20 analyzed reviews per window, 3 current mentions, +5 percentage points and mean severity >=75. Resolved/ignored issues excluded. Same title/category/day deduplicated; at most five new alerts per evaluation.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/reports/{reportId}/share": {
+      "get": {
+        "summary": "Read sharing status",
+        "description": "OWNER only. Raw tokens never returned by this read.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create or replace expiring report link",
+        "description": "OWNER only; explicit confirmation; CSRF in account mode. Rotation revokes previous token. Anyone holding the token can read the allowlisted snapshot projection. Token returned only once.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      7,
+                      30
+                    ]
+                  },
+                  "confirmation": {
+                    "type": "string",
+                    "enum": [
+                      "SHARE REPORT"
+                    ]
+                  }
+                },
+                "required": [
+                  "days",
+                  "confirmation"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/reports/{reportId}/share/revoke": {
+      "post": {
+        "summary": "Revoke report link",
+        "description": "OWNER only. Does not erase copies already downloaded.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        }
+      }
+    },
+    "/api/shared-reports/{token}": {
+      "get": {
+        "summary": "Read one deliberately shared report",
+        "description": "Anonymous capability link, 43 URL-safe characters. Invalid, expired and revoked tokens return 404. No private workspace/issue identifiers. No-store, no-referrer, noindex. Limit 120 valid-shaped token requests/minute per backend instance.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/retention": {
+      "get": {
+        "summary": "Read data-retention policy",
+        "description": "OWNER only. Default disabled; zero keeps reviews/reports until manually deleted.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        }
+      },
+      "post": {
+        "summary": "Configure daily automatic deletion",
+        "description": "OWNER only; confirmation must be ENABLE RETENTION when enabling. Reviews age by Steam creation date, reports/read notices by creation date. Clearing reviews invalidates grouping. Saved reports retain quotes; report deletion revokes sharing. Busy games deferred, usage ledger and unread notices preserved.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/retention/preview": {
+      "post": {
+        "summary": "Count rows matching proposed retention",
+        "description": "OWNER only. Read-only preview; counts may change before deletion. CSRF required in account mode.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionCounts"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "403": {
+            "description": "Insufficient role or invalid CSRF token"
+          },
+          "404": {
+            "description": "Unavailable resource"
+          },
+          "409": {
+            "description": "Concurrent operation"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Service unavailable"
+          },
+          "401": {
+            "description": "Authentication required in account mode"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionInput"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3996,7 +4636,14 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "WATCHING",
+              "IMPROVING",
+              "RESOLVED",
+              "IGNORED"
+            ]
           },
           "metrics": {
             "$ref": "#/components/schemas/IssueMetrics"
@@ -5114,6 +5761,264 @@
           "steamAppId",
           "name",
           "headerImageUrl"
+        ]
+      },
+      "AlertPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "enabled",
+          "lastCheckedAt"
+        ]
+      },
+      "AlertResult": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created",
+          "reason"
+        ]
+      },
+      "ShareState": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "active",
+          "expiresAt"
+        ]
+      },
+      "ShareCreated": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "token",
+          "expiresAt"
+        ]
+      },
+      "SharedReport": {
+        "type": "object",
+        "properties": {
+          "gameName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "method": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "sourceText": {
+                  "type": "string"
+                },
+                "steamReviewId": {
+                  "type": "string"
+                },
+                "model": {
+                  "type": "string"
+                },
+                "promptVersion": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "sourceText",
+                "steamReviewId",
+                "model",
+                "promptVersion"
+              ]
+            }
+          }
+        },
+        "required": [
+          "gameName",
+          "type",
+          "periodStart",
+          "periodEnd",
+          "createdAt",
+          "summary",
+          "method",
+          "evidence"
+        ]
+      },
+      "RetentionInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "reviewDays": {
+            "type": "integer",
+            "enum": [
+              0,
+              90,
+              180,
+              365
+            ]
+          },
+          "reportDays": {
+            "type": "integer",
+            "enum": [
+              0,
+              30,
+              90,
+              180,
+              365
+            ]
+          },
+          "notificationDays": {
+            "type": "integer",
+            "enum": [
+              30,
+              90,
+              180,
+              365
+            ]
+          },
+          "confirmation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "reviewDays",
+          "reportDays",
+          "notificationDays"
+        ]
+      },
+      "RetentionPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "reviewDays": {
+            "type": "integer",
+            "enum": [
+              0,
+              90,
+              180,
+              365
+            ]
+          },
+          "reportDays": {
+            "type": "integer",
+            "enum": [
+              0,
+              30,
+              90,
+              180,
+              365
+            ]
+          },
+          "notificationDays": {
+            "type": "integer",
+            "enum": [
+              30,
+              90,
+              180,
+              365
+            ]
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "workerEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "reviewDays",
+          "reportDays",
+          "notificationDays",
+          "lastRunAt",
+          "workerEnabled"
+        ]
+      },
+      "RetentionCounts": {
+        "type": "object",
+        "properties": {
+          "reviews": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reports": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "readNotifications": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "reviews",
+          "reports",
+          "readNotifications"
         ]
       }
     },

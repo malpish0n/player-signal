@@ -2,7 +2,7 @@
 
 ## Current verification boundary
 
-The owner requested no automated tests or builds for the latest implementation batch. Frontend static type/lint inspection may be used without producing an application build. New backend/frontend source is not in the currently running Docker images. Do not treat an old localhost screen or a previous passing test count as verification of these changes. A build, migration rehearsal, authorization checks and restore drill remain release gates before publishing.
+The owner requested no automated tests or builds for the latest implementation batch. Frontend static type/lint inspection may be used without producing an application build. New backend/frontend source is not in the currently running Docker images. Do not treat an old localhost screen or a previous passing test count as verification of these changes. A build, migration rehearsal through V16, authorization checks and restore drill remain release gates before publishing.
 
 ## Deployment template
 
@@ -42,4 +42,4 @@ The script refuses a database with existing application tables and restores in o
 
 ## External services intentionally deferred
 
-Stripe checkout/webhooks, email transport, domain provisioning, external monitoring/alerts and public share links are not active. No payment plans or delivery guarantees are advertised. Operator/legal review, dependency/security scans, source-terms review, production acceptance and local-model quality evaluation remain required before a commercial launch.
+Stripe checkout/webhooks, email transport, domain provisioning, external monitoring/alerts are not active. Expiring report-share endpoints are implemented but no report has been shared or publicly deployed. No payment plans or delivery guarantees are advertised. Operator/legal review, dependency/security scans, source-terms review, production acceptance and local-model quality evaluation remain required before a commercial launch.

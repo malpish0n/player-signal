@@ -119,3 +119,11 @@ Later: complete F public beta; G paid SaaS.
 - Backend: 55 tests passed, including session rotation/logout, CSRF, cross-workspace requests, encoded paths and duplicate-account transaction rollback. Frontend: 37 tests passed; lint/typecheck passed. Both production Docker builds passed.
 - Accounts remain disabled in the existing local installation. This is the first slice of F; public beta and live AI evaluation remain incomplete.
 - Live upgrade: all six Flyway migrations succeeded; the existing Portal 2 game and all 1000 reviews remain in the local workspace, with zero accounts created. HTTP session reports local mode; browser confirms PlayerSignal branding, account settings and the retained dashboard. Preview: `/tmp/playersignal-rename.png`.
+
+## Milestone F2 — workspace access and session recovery
+
+- Protected library/game pages check the session before mounting data views. Anonymous access offers login/registration with a validated return path; session-check failures allow retry without exposing cached content.
+- Game API 401 responses remove private content. Tab focus/visibility changes recheck access and account-header state; stale checks are aborted. Local mode and public synthetic demos remain available.
+- Login and registration retain the workspace destination and query filters. Only known same-origin workspace routes are allowed after authentication.
+- Verification: frontend lint/typecheck and 60 tests passed; production Docker build passed. Browser checks in an isolated temporary auth-enabled stack confirmed the access screen, login/register links retaining the destination, and public demo access. Existing local Portal 2 dashboard still shows 1000 reviews. Preview: `/tmp/playersignal-f2-access.png`.
+- No new migration, live account, provider call or auth-setting change in the main installation. Browser checks did not submit credentials; authenticated-state/expiry flows are covered by component tests and prior backend auth tests. Public beta recovery/verification and deployment work remain pending.

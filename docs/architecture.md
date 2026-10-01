@@ -71,3 +71,9 @@ WorkspaceContext selects the authenticated workspace, or the fixed legacy worksp
 V1–V4 checksums remain unchanged. V5 renames the schema; V6 assigns existing games to the local workspace without assigning that workspace to a signup. This is an opt-in foundation, not completion of public beta. Sessions/rate limits are process-local; public deployment still needs recovery/verification flows, proxy-aware distributed throttling, HTTPS configuration and operational review.
 
 References: [Spring Security CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html), [password storage](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html), [context persistence](https://docs.spring.io/spring-security/reference/servlet/authentication/persistence.html).
+
+## Milestone F2: workspace access and session recovery
+
+Workspace pages mount their data-fetching children only after a successful session check. Anonymous users see sign-in/registration links; outages show a retryable access-check error. Public demo and account routes remain outside this UI boundary. Game API 401 responses unmount workspace content and clear the account header; returning to a tab rechecks the session before reloading workspace data. Abort guards prevent older requests from restoring stale access state. This UI boundary complements, and does not replace, backend ownership checks.
+
+Login/registration preserve the requested workspace path and query filters via `next`. A shared allowlist limits return destinations to the library and known game pages, rejecting external origins, backslashes, control characters and unrelated routes. Successful authentication performs a full navigation to discard cached account data. Registration into a new workspace does not grant access to the previous account's game IDs; the backend still returns 404 for those IDs.

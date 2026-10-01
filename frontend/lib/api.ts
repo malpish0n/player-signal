@@ -1,3 +1,4 @@
+import {SESSION_REQUIRED_EVENT} from "./account-navigation";
 import { Analysis, parseAnalysis } from "./analysis";
 export type Game = { id: string; steamAppId: number; name: string; headerImageUrl: string | null; createdAt: string };
 export type Run = { id: string; status: "RUNNING" | "COMPLETED" | "PARTIAL" | "FAILED"; fetched: number; inserted: number; updated: number; startedAt: string; finishedAt: string | null; error: string | null };
@@ -42,6 +43,9 @@ export async function api<T>(path: string, parse: (value: unknown) => T, init?: 
     else if (session.enabled !== false) throw new Error("Invalid session response.");
   }
   const response = await fetch(`/api/${path}`, { ...init, headers, cache: "no-store" });
+  if (response.status === 401 && (path === "games" || path.startsWith("games/")) && typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SESSION_REQUIRED_EVENT));
+  }
   const value: unknown = response.status === 204 ? null : await response.json();
   if (!response.ok) {
     const error = record(value);

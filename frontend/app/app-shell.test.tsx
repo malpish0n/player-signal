@@ -3,6 +3,7 @@ import {afterEach,expect,it,vi} from 'vitest';
 import {render,screen,cleanup} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {AppShell} from './app-shell';
+vi.mock('./workspace-access',()=>({WorkspaceAccess:({children}:{children:React.ReactNode})=>children}));
 vi.mock('./account-control',()=>({AccountControl:()=>null}));
 vi.mock('next/navigation',()=>({usePathname:()=>'/games/test/overview'}));
 afterEach(cleanup);

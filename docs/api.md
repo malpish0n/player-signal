@@ -85,3 +85,9 @@ Severity sorts by score then mentions; mentions sorts by count then severity. Gr
 Both review listing and CSV export accept optional `from` and `to` in strict `YYYY-MM-DD` format (years 0001–9999). Dates filter the Steam review creation timestamp, not its last edit or import. Bounds are inclusive calendar days in UTC: `from=2026-10-01&to=2026-10-01` selects `[2026-10-01T00:00:00Z, 2026-10-02T00:00:00Z)`. Either bound may be omitted; blank values mean no bound. Invalid dates or `from > to` return 400 `INVALID_DATE_RANGE`.
 
 Date predicates combine with language, vote and text filters in the shared review repository and apply before counting/pagination. CSV traverses the same filtered snapshot. Review dates shown in the explorer use UTC to match the controls. These filters do not alter import scope, analysis batches or persisted data.
+
+## Before/after comparison
+
+`GET /api/games/{id}/comparison?date=2026-09-20&days=7` compares `[date−days,date)` with `[date,date+days)`, bounded at UTC midnight. `days` must be 7, 30 or 90. `date` is a required valid calendar date. The after period must end at or before the current instant; otherwise 400 `INCOMPLETE_PERIOD`. Dates outside the supported calendar range return 400. Workspace authorization applies as for other game routes.
+
+Each window returns inclusive `from`/`to` dates, review/recommended counts and nullable `recommendationRate` (0–1). `reviewChangePercent` is 100×(after−before)/before, null when before has zero reviews. `recommendationChangePoints` is 100×(afterRate−beforeRate), null if either rate is missing. `imported` counts all stored reviews; `calculatedAt` timestamps the read. All counts come from one repeatable-read transaction. No data is imported, classified or persisted by this endpoint.

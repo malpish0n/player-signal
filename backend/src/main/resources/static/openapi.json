@@ -1336,6 +1336,106 @@
           }
         }
       }
+    },
+    "/api/games/{id}/comparison": {
+      "get": {
+        "summary": "Compare imported review recommendations before and after a UTC date",
+        "description": "Equal complete windows of 7, 30 or 90 days. Selected date begins the after window. Missing baselines are null. This is an imported sample, not evidence of update causality.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                7,
+                30,
+                90
+              ],
+              "default": 7
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consistent database snapshot of both periods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "game": {
+                      "$ref": "#/components/schemas/Game"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "days": {
+                      "type": "integer"
+                    },
+                    "calculatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "imported": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "before": {
+                      "$ref": "#/components/schemas/ComparisonWindow"
+                    },
+                    "after": {
+                      "$ref": "#/components/schemas/ComparisonWindow"
+                    },
+                    "reviewChangePercent": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "recommendationChangePoints": {
+                      "type": "number",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date/window or incomplete after period"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "Game absent or inaccessible"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2394,6 +2494,31 @@
                 "type": "string"
               }
             }
+          }
+        }
+      },
+      "ComparisonWindow": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "reviews": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recommended": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recommendationRate": {
+            "type": "number",
+            "nullable": true
           }
         }
       }

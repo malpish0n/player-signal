@@ -95,3 +95,7 @@ ReviewDateRange validates calendar dates and produces an inclusive UTC start and
 ## Analysis history UI
 
 The review list mounts a history reader only when requested. It uses the existing workspace/game/review-scoped history endpoint and validates each snapshot before rendering. Closing aborts pending reads; reopening fetches fresh history. The existing current-analysis ID identifies the current version in this view; other entries are labeled historical. Source snapshots render as escaped text, independently of the current review body. API order is creation time descending; timestamps in the UI are explicitly labeled last-updated UTC. No server contract or persistence change is needed.
+
+## Date comparison foundation
+
+ComparisonService aggregates Steam recommendation votes in two equal complete UTC windows within a repeatable-read transaction. Explicit OffsetDateTime query parameters avoid JVM timezone dependence. It reuses the overview delta formulas and the date parser. No AI sentiment or cluster snapshot is conflated with Steam votes. The UI encodes date/window selection in its URL and links to existing review date filters; cookie authorization and safe post-login return routing include the comparison page. This is a read-only foundation for patch comparisons; managed updates, patch notes and causal attribution are outside scope.

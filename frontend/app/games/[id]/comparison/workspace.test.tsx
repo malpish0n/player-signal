@@ -1,0 +1,10 @@
+// @vitest-environment jsdom
+import {afterEach,expect,it,vi} from 'vitest';
+import {cleanup,render,screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {ComparisonWorkspace} from './workspace';
+const result={game:{id:'game',steamAppId:620,name:'Fixture',headerImageUrl:null,createdAt:'2026-01-01T00:00:00Z'},date:'2026-09-20',days:7,calculatedAt:'2026-10-01T12:00:00Z',imported:4,before:{from:'2026-09-13',to:'2026-09-19',reviews:0,recommended:0,recommendationRate:null},after:{from:'2026-09-20',to:'2026-09-26',reviews:4,recommended:3,recommendationRate:.75},reviewChangePercent:null,recommendationChangePoints:null};
+afterEach(()=>{cleanup();vi.unstubAllGlobals();});
+it('waits for a date before querying',()=>{const fetch=vi.fn();vi.stubGlobal('fetch',fetch);render(<ComparisonWorkspace id="game" date="" days="7"/>);expect(fetch).not.toHaveBeenCalled();expect(screen.getByText('Choose a date to compare')).toBeTruthy();});
+it('shows null baselines and links to exact inclusive evidence windows',async()=>{const fetch=vi.fn().mockResolvedValue(Response.json(result));vi.stubGlobal('fetch',fetch);render(<ComparisonWorkspace id="game" date="2026-09-20" days="7"/>);await screen.findByText('75.0%');expect(screen.getByText('No reviews')).toBeTruthy();expect(screen.getAllByText('No comparison baseline')).toHaveLength(2);expect(fetch.mock.calls[0][0]).toBe('/api/games/game/comparison?date=2026-09-20&days=7');expect(screen.getByRole('link',{name:'Review before period →'}).getAttribute('href')).toBe('/games/game?from=2026-09-13&to=2026-09-19');expect(screen.getByRole('link',{name:'Review after period →'}).getAttribute('href')).toBe('/games/game?from=2026-09-20&to=2026-09-26');});
+it('shows an API failure and supports retry',async()=>{vi.stubGlobal('fetch',vi.fn().mockRejectedValueOnce(Error('Unavailable')).mockResolvedValueOnce(Response.json(result)));render(<ComparisonWorkspace id="game" date="2026-09-20" days="7"/>);await screen.findByRole('alert');await userEvent.click(screen.getByRole('button',{name:'Retry comparison'}));await screen.findByText('75.0%');});

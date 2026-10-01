@@ -149,3 +149,7 @@ Reviews and CSV export also support **From (UTC)** and **To (UTC, inclusive)**. 
 ## Inspect analysis history
 
 Each review offers **View analysis history**. Expand it to load saved versions, identify the version used by the current review view, inspect model/prompt/provider metadata and reopen the exact input text and its SHA-256 hash. Failed/skipped versions keep their status and reason. Closing and reopening refreshes history; opening history never starts an analysis or provider call. A review without saved versions shows an explicit empty state. Retries update their existing version rather than producing an attempt-by-attempt audit log.
+
+## Before & after
+
+Choose **Before & after** in a game's navigation. Enter a reference date (for example, an update date) and 7, 30 or 90 days on each side. The selected day begins the after period; both windows must be complete UTC days. The view compares imported review volume and Steam recommendation rates and links to the exact reviews in each period. Missing baselines stay explicit. Results describe a partial imported sample and do not establish that an update caused a change. This first version does not store update records or analyze patch notes.

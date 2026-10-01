@@ -43,7 +43,7 @@ class AuthIntegrationTest {
  @Test void separateAccountsCanConnectSameAppButCannotAccessEachOthersNestedRoutes()throws Exception{
   var a=register();var b=register();UUID ga=game(a),gb=game(b);assertThat(ga).isNotEqualTo(gb);
   mvc.perform(get("/api/games").session(b.session())).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(ga.toString()))));
-  for(String tail:List.of("","/reviews","/reviews/export","/overview","/analysis","/sync/latest","/issues","/issues/"+UUID.randomUUID(),"/reviews/"+UUID.randomUUID()+"/analyses"))mvc.perform(get("/api/games/"+ga+tail).session(b.session())).andExpect(status().isNotFound());
+  for(String tail:List.of("","/comparison?date=2026-01-01","/reviews","/reviews/export","/overview","/analysis","/sync/latest","/issues","/issues/"+UUID.randomUUID(),"/reviews/"+UUID.randomUUID()+"/analyses"))mvc.perform(get("/api/games/"+ga+tail).session(b.session())).andExpect(status().isNotFound());
   for(String tail:List.of("/sync","/analysis","/issues/rebuild"))mvc.perform(post("/api/games/"+ga+tail).session(b.session()).header("X-CSRF-TOKEN",b.csrf())).andExpect(status().isNotFound());
   // Encoded UUID characters must not bypass the same ownership check.
   String encoded="%"+Integer.toHexString(ga.toString().charAt(0))+ga.toString().substring(1);

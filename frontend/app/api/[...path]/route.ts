@@ -1,7 +1,7 @@
 import { sameOrigin } from "@/lib/same-origin";
 import { NextRequest } from "next/server";
 
-const allowedPath = /^(?:workspace(?:\/(?:operations|export|account\/delete|switch|invites(?:\/(?:accept|[0-9a-f-]{36}\/revoke))?|members\/[0-9a-f-]{36}\/(?:role|remove)))?|auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/preview|\/[0-9a-f-]{36}(?:\/overview|\/comparison|\/automation|\/alerts(?:\/check)?|\/notifications(?:\/read)?|\/delete|\/saved-views(?:\/[0-9a-f-]{36}\/remove)?|\/reports(?:\/(?:generate|[0-9a-f-]{36}))?|\/usage|\/updates(?:\/[0-9a-f-]{36})?|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}(?:\/(?:trend|workflow))?))?|\/analysis|\/reviews(?:\/export|\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
+const allowedPath = /^(?:shared-reports\/[A-Za-z0-9_-]{43}|workspace(?:\/(?:operations|export|account\/delete|switch|invites(?:\/(?:accept|[0-9a-f-]{36}\/revoke))?|members\/[0-9a-f-]{36}\/(?:role|remove)))?|auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/preview|\/[0-9a-f-]{36}(?:\/overview|\/comparison|\/automation|\/alerts(?:\/check)?|\/notifications(?:\/read)?|\/delete|\/saved-views(?:\/[0-9a-f-]{36}\/remove)?|\/reports(?:\/(?:generate|[0-9a-f-]{36}(?:\/share(?:\/revoke)?)?))?|\/usage|\/updates(?:\/[0-9a-f-]{36})?|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}(?:\/(?:trend|workflow))?))?|\/analysis|\/reviews(?:\/export|\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const resource = path.join("/");
@@ -15,7 +15,7 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     const backend = process.env.BACKEND_URL ?? "http://localhost:8080";
     const upstreamHeaders = new Headers({ "Content-Type": "application/json" });
     const session = request.cookies.get("PLAYERSIGNAL_SESSION");
-    if (session) upstreamHeaders.set("Cookie", `PLAYERSIGNAL_SESSION=${session.value}`);
+    if (session && !resource.startsWith("shared-reports/")) upstreamHeaders.set("Cookie", `PLAYERSIGNAL_SESSION=${session.value}`);
     const csrf = request.headers.get("X-CSRF-TOKEN");
     if (csrf) upstreamHeaders.set("X-CSRF-TOKEN", csrf);
     const response = await fetch(`${backend}/api/${resource}${request.nextUrl.search}`, {
@@ -27,6 +27,7 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     });
     const csv = resource.endsWith('/reviews/export') && response.ok;
     const responseHeaders = new Headers({ "Content-Type": csv ? "text/csv; charset=UTF-8" : "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+    if (resource.startsWith("shared-reports/")) { responseHeaders.set("Referrer-Policy","no-referrer"); responseHeaders.set("X-Robots-Tag","noindex, nofollow, noarchive"); }
     if (csv) responseHeaders.set("Content-Disposition", `attachment; filename="playersignal-${path[1]}-reviews.csv"`);
     for (const cookie of response.headers.getSetCookie()) {
       if (cookie.startsWith("PLAYERSIGNAL_SESSION=")) responseHeaders.append("Set-Cookie", cookie);

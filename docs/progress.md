@@ -272,3 +272,7 @@ Final static inspection found malformed nested substitutions for AUTH_ENABLED an
 ## Opt-in issue spike alerts
 
 Added per-game in-app high-severity growth alerts, disabled by default. Hourly and manual evaluation use complete UTC weeks, current classifications, minimum 20 analyzed reviews per window, 3 current mentions, +5pp share and severity >=75. Stale grouping and ignored/resolved issues are excluded; evidence title/day keys deduplicate notifications. No external delivery, schedule activation or live evaluation performed. Static inspection covers SQL scoping and threshold/denominator logic; frontend inspection follows.
+
+## Expiring report shares
+
+Added explicit owner-only sharing of one saved report, 1/7/30-day expiry, cryptographic 256-bit tokens stored only as hashes, token rotation and revocation. Anonymous read returns an allowlisted projection (game name/dates/brief/source excerpts), not workspace identifiers or access to other routes. Public views omit cookies, disable caching/indexing and referrer propagation. Per-instance public reads are bounded to 120/minute. Deleting the report/game cascades to the share. No real share created or publication performed. Static review only; runtime access/revocation checks remain part of later release verification.

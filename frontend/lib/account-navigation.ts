@@ -4,7 +4,7 @@ export function workspaceDestination(value: string | null): string {
   try {
     const url = new URL(value, 'https://playersignal.invalid');
     if (!value.startsWith('/') || url.origin !== 'https://playersignal.invalid' || url.hash) return '/';
-    if (url.pathname !== '/' && !/^\/games\/[0-9a-f-]{36}(?:\/(?:overview|processing|comparison|updates|reports|issues(?:\/[0-9a-f-]{36})?))?$/.test(url.pathname)) return '/';
+    if (url.pathname !== '/' && url.pathname !== '/settings' && !/^\/games\/[0-9a-f-]{36}(?:\/(?:overview|processing|comparison|updates|reports|issues(?:\/[0-9a-f-]{36})?))?$/.test(url.pathname)) return '/';
     return url.pathname + url.search;
   } catch { return '/'; }
 }

@@ -43,7 +43,7 @@ export async function api<T>(path: string, parse: (value: unknown) => T, init?: 
     else if (session.enabled !== false) throw new Error("Invalid session response.");
   }
   const response = await fetch(`/api/${path}`, { ...init, headers, cache: "no-store" });
-  if (response.status === 401 && (path === "games" || path.startsWith("games/")) && typeof window !== "undefined") {
+  if (response.status === 401 && (path === "games" || path.startsWith("games/") || path === "workspace" || path.startsWith("workspace/")) && typeof window !== "undefined") {
     window.dispatchEvent(new Event(SESSION_REQUIRED_EVENT));
   }
   const value: unknown = response.status === 204 ? null : await response.json();

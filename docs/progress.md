@@ -224,3 +224,10 @@ Later: complete F public beta; G paid SaaS.
 - Added rate-limited Steam preview before confirmation. Confirm connects the game, requests an initial bounded import and opens Processing; an import-start failure retains the connected game and offers a recovery link. Analysis remains explicit, with real pipeline counts and next-action links.
 - Added /welcome with labeled synthetic examples, product workflow and demo CTA, plus /privacy and /terms drafts reflecting actual local data flows. Paid plans are not advertised as active; legal pages explicitly require operator details/review before launch.
 - Reviewed the preview route exception in WorkspaceFilter (no arbitrary game route exemption), proxy allowlist, input contracts and partially completed onboarding recovery. No new external fetch, automated test/build or browser runtime verification performed.
+
+## Workspace teams and operations
+
+- V11 introduces owner/admin/read-only member roles and invitation hashes. Invitations are email-bound, expire in seven days and reveal a one-time token only at creation; manual private delivery is used until email is configured. Owners can revoke invites or change/remove non-owner access.
+- Membership is re-read from PostgreSQL for authorization, so revoked access is not retained through a cached session principal. Joining/switching workspaces changes the active workspace; original personal ownership remains intact. Game mutations enforce write roles in the request filter.
+- Settings adds workspace selection, membership, invitations and a workspace-limited recent-job view. No global customer admin access is exposed.
+- Static review covered membership refresh, role gates, invite acceptance/revocation, fallback workspace and proxy routes. No accounts, invitations or grants were created live. Security behavior remains runtime-unverified because tests/builds are disabled for this session.

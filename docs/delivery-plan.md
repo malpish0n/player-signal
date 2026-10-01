@@ -16,7 +16,7 @@ Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email account
 | Deployment, monitoring, backups | Pending configuration; hosting deferred by owner |
 | Billing | External integration deferred by owner |
 | Scheduled work and notifications | Pending; email delivery deferred by owner |
-| Teams / operations / saved product preferences | Pending |
+| Teams / operations / saved product preferences | Membership, manual invites, workspace jobs, workflow and saved views implemented; security runtime acceptance pending |
 | Data controls and sharing | Pending |
 
 A–E are implemented alpha slices, not completed production acceptance. The 3–5 game quality gate, semantic clustering evaluation and end-to-end release verification remain open. Rules-based classification must never be labeled as AI or synthetic fixtures injected into live data.

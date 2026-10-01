@@ -218,3 +218,9 @@ Later: complete F public beta; G paid SaaS.
 - Issue detail adds 7/30/90-day current-version mention timelines, explicit analyzed-review denominators and a transparent weighted investigation-priority calculation. Zero after-period mentions produce zero priority; missing/stale groupings remain visible.
 - Same-game validation and existing workspace/CSRF protection cover preference writes. Saved URLs are restricted to review/issue pages of the same game; no external redirects or arbitrary schemes are accepted. Saved view removal affects only the matching game's record.
 - Static review only: checked transaction caps, route allowlist, normalized workflow keys and UI error/loading branches. No tests/builds/runtime claim. Priority is separate from legacy average-severity sorting; semantic clustering quality and remaining exploration filters are still open.
+
+## Guided connection and public information pages
+
+- Added rate-limited Steam preview before confirmation. Confirm connects the game, requests an initial bounded import and opens Processing; an import-start failure retains the connected game and offers a recovery link. Analysis remains explicit, with real pipeline counts and next-action links.
+- Added /welcome with labeled synthetic examples, product workflow and demo CTA, plus /privacy and /terms drafts reflecting actual local data flows. Paid plans are not advertised as active; legal pages explicitly require operator details/review before launch.
+- Reviewed the preview route exception in WorkspaceFilter (no arbitrary game route exemption), proxy allowlist, input contracts and partially completed onboarding recovery. No new external fetch, automated test/build or browser runtime verification performed.

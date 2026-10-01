@@ -14,7 +14,7 @@ public final class WorkspaceFilter extends OncePerRequestFilter {
  public WorkspaceFilter(JdbcTemplate jdbc,WorkspaceContext workspace){this.jdbc=jdbc;this.workspace=workspace;}
  @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{
   var match=GAME.matcher(org.springframework.web.util.UrlPathHelper.defaultInstance.getPathWithinApplication(request));var auth=SecurityContextHolder.getContext().getAuthentication();
-  if(match.matches()&&(!workspace.enabled()||(auth!=null&&auth.getPrincipal() instanceof AccountPrincipal))){
+  if(!request.getServletPath().equals("/api/games/preview")&&match.matches()&&(!workspace.enabled()||(auth!=null&&auth.getPrincipal() instanceof AccountPrincipal))){
    UUID owner=workspace.current();
    UUID id;try{id=UUID.fromString(match.group(1));}catch(IllegalArgumentException e){response.sendError(400);return;}
    if(jdbc.queryForObject("SELECT count(*) FROM playersignal.game WHERE id=? AND workspace_id=?",Integer.class,id,owner)==0){response.setStatus(404);response.setContentType("application/json");response.getWriter().write("{\"code\":\"GAME_NOT_FOUND\",\"message\":\"Game not found in your workspace.\"}");return;}

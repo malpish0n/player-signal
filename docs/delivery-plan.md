@@ -11,8 +11,8 @@ Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email account
 | Issue analytics, scoring and exploration | Per-issue timeline/share/priority and manual workflow implemented; static review only; remaining filters/semantic quality pending |
 | Full patch comparison | Category/issue shares and timeline implemented; static review only |
 | Saved weekly reports / evidence summaries | Deterministic snapshots implemented; static review only; AI executive synthesis not implemented |
-| Onboarding and UI completion | Pending |
-| Public landing and legal drafts | Pending |
+| Onboarding and UI completion | Preview/confirm/import and guided processing implemented; E2E/accessibility/performance acceptance not run |
+| Public landing and legal drafts | Implemented; owner/legal review and publication deferred |
 | Deployment, monitoring, backups | Pending configuration; hosting deferred by owner |
 | Billing | External integration deferred by owner |
 | Scheduled work and notifications | Pending; email delivery deferred by owner |

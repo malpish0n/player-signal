@@ -26,6 +26,10 @@ public class GameController {
         this.usage=usage;this.workspace=workspace;
         this.games = games; this.steam = steam; this.reviews = reviews; this.ingestion = ingestion; this.runs = runs;
     }
+    @PostMapping("/preview") public SteamClient.GameDetails preview(@RequestBody AddGame body) {
+        long app=SteamAppId.parse(body.steamApp());var event=usage.reserve(workspace.current(),null,null,"GAME_LOOKUP",null);
+        try {var details=steam.lookup(app);usage.finish(event,true,0,0);return details;}catch(RuntimeException error){usage.finish(event,false,0,0);throw error;}
+    }
     @GetMapping public List<GameRepository.Game> list() { return games.list(); }
     @PostMapping public GameRepository.Game add(@RequestBody AddGame body) {
         long app=SteamAppId.parse(body.steamApp());

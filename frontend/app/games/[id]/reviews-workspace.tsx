@@ -90,6 +90,7 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
         {busy ? "Starting…" : run?.status === "RUNNING" ? "Importing…" : run?.status === "PARTIAL" || run?.status === "FAILED" ? "Resume import" : "Sync reviews"}
       </button>
     </div>
+    {processingOnly&&<section className="panel"><h2>From import to insight</h2><ol><li>Game connected: {game?.name??'loading…'}</li><li>Reviews imported: {analysis?.counts.total??'loading…'}{run?.status==='PARTIAL'?' · partial sample':''}</li><li>Reviews analyzed: {analysis?.counts.succeeded??'loading…'} · failed: {analysis?.counts.failed??'loading…'}</li><li><Link href={`/games/${id}/issues`}>Group recurring issues and inspect evidence →</Link></li><li><Link href={`/games/${id}/overview`}>Open dashboard →</Link></li></ol><p className="muted">Browse imported reviews while analysis continues. Counts reflect saved work; no progress percentages are estimated.</p></section>}
     {error && <div className="panel" role="alert"><p className="error">{error}</p><p className="muted">Any displayed data may be stale. Previously saved reviews remain available.</p><button onClick={() => setRetry(value => value + 1)}>Retry loading</button></div>}
     <section className="panel compact" aria-label="Import status">
       <h2>Import status</h2>

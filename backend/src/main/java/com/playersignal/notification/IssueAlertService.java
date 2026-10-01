@@ -24,7 +24,9 @@ public class IssueAlertService {
     public IssueAlertService(JdbcTemplate jdbc, ComparisonService comparison, IssueService issues,
             PlatformTransactionManager manager, @Value("${SCHEDULER_ENABLED:true}") boolean worker) {
         this.jdbc=jdbc; this.comparison=comparison; this.issues=issues;
-        this.transaction=new TransactionTemplate(manager); this.worker=worker;
+        this.transaction=new TransactionTemplate(manager);
+        this.transaction.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ);
+        this.worker=worker;
     }
     public Policy get(UUID game) {
         return jdbc.query("SELECT enabled,last_checked_at FROM playersignal.alert_policy WHERE game_id=?",

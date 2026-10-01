@@ -286,3 +286,7 @@ Retention migration also changes the cached-source reference to ON DELETE SET NU
 ## Optional local semantic clustering
 
 Added local Ollama embedding adapter, input/model/revision cache, dimension and finite-vector validation, configurable cosine threshold, and category/anchor-constrained centroid grouping. Snapshot identity includes embedding model/revision/threshold, so configuration changes mark previous snapshots stale. Lexical remains the default; no remote fallback or model download. Shared local-origin validation is used by classification and embeddings. Ollama was not found on PATH; no model inference or quality claim was made. Review covered transaction rollback, bounds, provenance, and cache invalidation; frontend/config static checks follow.
+
+## Patch snapshot completion
+
+Before & after now saves PATCH snapshots using the selected date/window and a persistent retry idempotency key, with a link to the saved report/sharing controls. Saving explicitly recalculates against current data rather than claiming to freeze an older browser response. Alert evaluation now runs at REPEATABLE READ so comparison and evidence inspect one database snapshot. No report was created in the live database; frontend type/lint inspection follows.

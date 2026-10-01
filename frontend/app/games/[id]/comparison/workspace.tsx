@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {ComparisonSignalsView} from '@/app/comparison-signals';
+import {SaveComparisonReport} from './save-report';
 import {ComparisonReportExport} from './report-export';
 import {useEffect,useState} from 'react';
 import {api,message} from '@/lib/api';
@@ -23,6 +24,6 @@ export function ComparisonWorkspace({id,date,days}:{id:string;date:string;days:s
  <tr><th scope="row">Source evidence</th><td><Link href={comparisonReviews(id,data.before)}>Review before period →</Link></td><td><Link href={comparisonReviews(id,data.after)}>Review after period →</Link></td></tr>
  </tbody></table></div><p>Review volume: <strong>{change(data.reviewChangePercent,'%')}</strong> · Recommendation rate: <strong>{change(data.recommendationChangePoints,' pp')}</strong></p><p className="muted">Recommendations are Steam votes, not AI sentiment. Changes compare after with before; pp means percentage points. Calculated {new Date(data.calculatedAt).toLocaleString(undefined,{timeZone:'UTC'})} UTC.</p></section>
  {data.signals&&<ComparisonSignalsView data={data.signals} id={id} date={date}/>}
- <ComparisonReportExport data={data}/></>}
+ <ComparisonReportExport data={data}/><SaveComparisonReport key={`${id}/${data.date}/${data.days}`} id={id} date={data.date} days={data.days}/></>}
  </>;
 }

@@ -1,6 +1,6 @@
 services:
   stripe-listener:
-    image: stripe/stripe-cli:latest
+    image: stripe/stripe-cli@sha256:92dbb87a9342196d6b4c0aa305ef8d0cacc1edd81da12f1e819ed78e9e99bead
     profiles: [billing]
     environment:
       STRIPE_API_KEY: ${STRIPE_SECRET_KEY:?Set a sandbox Stripe key}

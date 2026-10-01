@@ -10,8 +10,9 @@ import org.springframework.transaction.annotation.*;
 @Service
 public class DataControlService {
  public record DeleteInput(String confirmation,String password) {}
+ private final com.playersignal.billing.BillingService billing;
  private final JdbcTemplate jdbc;private final WorkspaceContext workspace;private final PasswordEncoder passwords;private final ObjectMapper mapper;
- public DataControlService(JdbcTemplate jdbc,WorkspaceContext workspace,PasswordEncoder passwords,ObjectMapper mapper){this.jdbc=jdbc;this.workspace=workspace;this.passwords=passwords;this.mapper=mapper;}
+ public DataControlService(JdbcTemplate jdbc,WorkspaceContext workspace,PasswordEncoder passwords,ObjectMapper mapper,com.playersignal.billing.BillingService billing){this.billing=billing;this.jdbc=jdbc;this.workspace=workspace;this.passwords=passwords;this.mapper=mapper;}
  @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ) public Map<String,Object> export(){
   workspace.requireOwner();UUID id=workspace.current();long reviews=jdbc.queryForObject("SELECT count(*) FROM playersignal.review r JOIN playersignal.game g ON g.id=r.game_id WHERE g.workspace_id=?",Long.class,id);if(reviews>5000)throw new ApiException(422,"EXPORT_LIMIT","Workspace JSON export is limited to 5000 reviews. Use filtered CSV exports for larger datasets.");
   long reportBytes=jdbc.queryForObject("SELECT coalesce(sum(octet_length(r.payload::text)),0) FROM playersignal.report r JOIN playersignal.game g ON g.id=r.game_id WHERE g.workspace_id=?",Long.class,id);
@@ -41,6 +42,7 @@ public class DataControlService {
   for(UUID id:owned){
    jdbc.queryForObject("SELECT id FROM playersignal.workspace WHERE id=? FOR UPDATE",UUID.class,id);
    jdbc.queryForList("SELECT workspace_id FROM playersignal.workspace_billing WHERE workspace_id=? FOR UPDATE",id);
+   for(String customer:jdbc.query("SELECT customer_id FROM playersignal.workspace_billing WHERE workspace_id=? AND customer_id IS NOT NULL",(rs,n)->rs.getString(1),id))billing.reconcileCustomer(customer);
    if(jdbc.queryForObject("SELECT count(*) FROM playersignal.workspace_billing WHERE workspace_id=? AND (status NOT IN ('none','canceled','incomplete_expired') OR checkout_expires_at>now())",Long.class,id)>0)throw new ApiException(409,"BILLING_ACTIVE","End the workspace subscription in Stripe and wait for any checkout to expire before deleting the account.");
    jdbc.queryForObject("SELECT id FROM playersignal.workspace WHERE id=? FOR UPDATE",UUID.class,id);if(jdbc.queryForObject("SELECT count(*) FROM playersignal.workspace_member WHERE workspace_id=? AND user_id<>?",Long.class,id,user)>0)throw new ApiException(409,"WORKSPACE_HAS_MEMBERS","Remove other members from your owned workspaces before deleting your account.");
    var games=jdbc.query("SELECT id FROM playersignal.game WHERE workspace_id=? ORDER BY steam_app_id",(rs,n)->rs.getObject(1,UUID.class),id);games.forEach(this::lockGame);jdbc.update("DELETE FROM playersignal.game WHERE workspace_id=?",id);jdbc.update("DELETE FROM playersignal.usage_event WHERE workspace_id=?",id);

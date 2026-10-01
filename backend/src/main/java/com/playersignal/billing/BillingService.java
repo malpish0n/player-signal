@@ -62,6 +62,7 @@ public class BillingService {
         }});
         return tx.execute(status->{var row=locked(workspace);
             if(!Set.of("none","canceled","incomplete_expired").contains((String)row.get("status")))throw new ApiException(409,"SUBSCRIPTION_EXISTS","Manage your existing subscription in the customer portal.");
+            if(!plan.equals(row.get("checkout_plan")))throw new ApiException(409,"CHECKOUT_CHANGED","The pending checkout changed. Reload billing and retry.");
             if(row.get("checkout_url")!=null)return new Link((String)row.get("checkout_url"));
             String customer=(String)row.get("customer_id");
             Map<String,String> form=new LinkedHashMap<>();form.put("mode","subscription");form.put("customer",customer);form.put("line_items[0][price]",price);form.put("line_items[0][quantity]","1");form.put("client_reference_id",workspace.toString());form.put("subscription_data[metadata][playersignal_workspace]",workspace.toString());form.put("success_url",origin+"/settings?billing=returned");form.put("cancel_url",origin+"/settings?billing=canceled");form.put("expires_at",Long.toString(instant(row.get("checkout_expires_at")).getEpochSecond()));

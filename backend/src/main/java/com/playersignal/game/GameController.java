@@ -14,18 +14,24 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/games")
 public class GameController {
     public record AddGame(String steamApp) {}
+    private final com.playersignal.usage.UsageService usage;
+    private final com.playersignal.auth.WorkspaceContext workspace;
     private final GameRepository games;
     private final SteamClient steam;
     private final ReviewRepository reviews;
     private final IngestionService ingestion;
     private final IngestionRepository runs;
     public GameController(GameRepository games, SteamClient steam, ReviewRepository reviews,
-                          IngestionService ingestion, IngestionRepository runs) {
+                          IngestionService ingestion, IngestionRepository runs, com.playersignal.usage.UsageService usage, com.playersignal.auth.WorkspaceContext workspace) {
+        this.usage=usage;this.workspace=workspace;
         this.games = games; this.steam = steam; this.reviews = reviews; this.ingestion = ingestion; this.runs = runs;
     }
     @GetMapping public List<GameRepository.Game> list() { return games.list(); }
     @PostMapping public GameRepository.Game add(@RequestBody AddGame body) {
-        return games.save(steam.lookup(SteamAppId.parse(body.steamApp())));
+        long app=SteamAppId.parse(body.steamApp());
+        var event=usage.reserve(workspace.current(),null,null,"GAME_LOOKUP",null);
+        try {var saved=games.save(steam.lookup(app));usage.finish(event,true,0,0);return saved;}
+        catch(RuntimeException error){usage.finish(event,false,0,0);throw error;}
     }
     @GetMapping("/{id}") public GameRepository.Game get(@PathVariable UUID id) { return games.get(id); }
     @PostMapping("/{id}/sync") public ResponseEntity<IngestionRepository.Run> sync(@PathVariable UUID id) {

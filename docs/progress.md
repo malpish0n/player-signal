@@ -184,3 +184,10 @@ Later: complete F public beta; G paid SaaS.
 - Verification: 71 backend tests and 81 frontend tests passed; lint/typecheck and both production Docker builds passed. Coverage includes persistent create/edit, invalid input, cap, stale edits, wrong-game writes, cross-account reads/writes, UI creation/links, retained input on conflict and retry.
 - Main stack upgraded successfully and all services are healthy. The new API returns the expected empty list; browser confirms navigation, form and empty state. No fabricated release was added to the real game; write behavior was verified with isolated database/component fixtures. Screenshot: `/tmp/playersignal-updates.png`.
 - Scope: manually entered release dates only. No Steam patch-note ingestion, deletion, patch-note analysis or automatic causal claims. Public-beta and live AI evaluation work remains pending.
+
+## Workspace usage reservations (owner-requested manual verification)
+
+- V8 adds a durable ledger: each analysis provider attempt (including retry) is reserved before network IO; crashes and unknown outcomes retain the charge. Cached/skipped inputs consume none. Workspace row locking serializes quota checks across games/processes.
+- Configurable monthly attempt cap and rolling sync limit; lookup requests are bounded. Token usage records successful provider responses; absent usage is not presented as zero cost. Processing shows workspace-wide counters.
+- Static review covered transaction boundaries, worker workspace lookup, retry paths, endpoint ownership and response parsing. Automated checks/builds were deliberately not run per the owner's new instruction; the new code is not yet deployed or runtime-verified.
+- No paid provider calls made. Monetary estimates and plan-specific entitlements are not implemented by these counters.

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class AnalysisService {
     public record Status(boolean available, String provider, String model, String promptVersion, int maxReviewsPerRun,
                          AnalysisRepository.Counts counts, AnalysisRepository.Run latestRun) {}
+    private final com.playersignal.usage.UsageService usage;
     private final DataSource dataSource;
     private final GameRepository games;
     private final AnalysisRepository repository;
@@ -26,7 +27,8 @@ public class AnalysisService {
     private final AnalysisSettings settings;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Semaphore capacity = new Semaphore(1);
-    public AnalysisService(DataSource dataSource, GameRepository games, AnalysisRepository repository, ReviewAnalyzer analyzer, AnalysisSettings settings) {
+    public AnalysisService(DataSource dataSource, GameRepository games, AnalysisRepository repository, ReviewAnalyzer analyzer, AnalysisSettings settings, com.playersignal.usage.UsageService usage) {
+        this.usage=usage;
         this.dataSource = dataSource; this.games = games; this.repository = repository; this.analyzer = analyzer; this.settings = settings;
     }
     public Status status(UUID gameId) {
@@ -70,13 +72,18 @@ public class AnalysisService {
                     complete(lock, id, run.id(), "SUCCEEDED", output, cached.id(), null, null); continue;
                 }
                 for (int attempt = 1; attempt <= 3; attempt++) {
+                    UUID usageId;
+                    try { usageId=usage.reserve(usage.workspaceForGame(run.gameId()),run.gameId(),id,"ANALYSIS",settings.model()); }
+                    catch (ApiException limit) {complete(lock,id,run.id(),"FAILED",null,null,null,limit.getMessage());repository.finish(run.id(),"FAILED",limit.getMessage());return;}
                     repository.attempt(lock.jdbc, id);
                     try {
                         var output = analyzer.analyze(new ReviewAnalyzer.Input(source.text(), source.language()));
+                        usage.finish(usageId,true,output.inputTokens(),output.outputTokens());
                         output.classification().validate(source.text());
                         complete(lock, id, run.id(), "SUCCEEDED", output, null, null, null);
                         break;
                     } catch (AnalysisFailure error) {
+                        usage.finish(usageId,false,0,0);
                         String message = error.code + ": " + error.getMessage();
                         if (attempt < 3 && error.retryable) {
                             repository.retryError(lock.jdbc, id, message);

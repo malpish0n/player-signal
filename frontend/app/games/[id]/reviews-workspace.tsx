@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import {UsagePanel} from "@/app/usage-panel";
 import { useCallback, useEffect, useState } from "react";
 import { api, Game, Run, ReviewPage, message, parseGame, parseRun, parseReviews } from "@/lib/api";
 
@@ -110,6 +111,7 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
         {analysis.counts.failed > 0 && <button disabled={!analysis.available || analyzing || analysis.latestRun?.status === 'RUNNING'} onClick={() => void analyze(true)}>Retry failed + pending</button>}</div>
       </>}
     </section>
+    {processingOnly && <UsagePanel id={id}/>}
     {!processingOnly && <section className="panel">
       <div className="page-heading"><h2>Reviews {reviews ? `· ${reviews.total.toLocaleString()}${filtered ? " matching" : " imported"}` : ""}</h2></div>
       <form className="filters" action={`/games/${id}`} key={`${language}/${vote}/${q}/${from}/${to}`}>

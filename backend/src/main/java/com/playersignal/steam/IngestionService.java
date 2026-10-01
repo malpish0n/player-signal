@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class IngestionService {
     private static final Logger LOG = LoggerFactory.getLogger(IngestionService.class);
+    private final com.playersignal.usage.UsageService usage;
     private final DataSource dataSource;
     private final GameRepository games;
     private final ReviewRepository reviews;
@@ -32,11 +33,11 @@ public class IngestionService {
     private final Semaphore capacity = new Semaphore(2);
 
     public IngestionService(DataSource dataSource, GameRepository games, ReviewRepository reviews,
-                            IngestionRepository runs, SteamClient steam,
+                            IngestionRepository runs, SteamClient steam, com.playersignal.usage.UsageService usage,
                             @Value("${playersignal.ingestion.max-pages:10}") int maxPages,
                             @Value("${playersignal.ingestion.page-delay-ms:500}") int pageDelayMillis) {
         if (maxPages < 1 || maxPages > 1000 || pageDelayMillis < 0) throw new IllegalArgumentException("Invalid ingestion limits");
-        this.dataSource = dataSource; this.games = games; this.reviews = reviews;
+        this.usage=usage;this.dataSource = dataSource; this.games = games; this.reviews = reviews;
         this.runs = runs; this.steam = steam; this.maxPages = maxPages; this.pageDelayMillis = pageDelayMillis;
     }
     public IngestionRepository.Run start(UUID gameId) {
@@ -47,6 +48,7 @@ public class IngestionService {
         try {
             lock = DatabaseJobLock.acquire(dataSource, -game.steamAppId());
             if (lock == null) throw new ApiException(409, "SYNC_IN_PROGRESS", "This game already has an import running.");
+            usage.reserve(usage.workspaceForGame(gameId),gameId,null,"SYNC",null);
             runs.failInterrupted(gameId);
             run = runs.create(gameId);
             DatabaseJobLock workerLock = lock;

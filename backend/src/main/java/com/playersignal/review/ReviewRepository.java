@@ -26,6 +26,10 @@ public class ReviewRepository {
     }
     @org.springframework.transaction.annotation.Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Page list(UUID gameId, int page, int size, String language, Boolean votedUp, String query, String from, String to) {
+        return list(gameId,page,size,language,votedUp,query,from,to,null,null,null);
+    }
+    @org.springframework.transaction.annotation.Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Page list(UUID gameId, int page, int size, String language, Boolean votedUp, String query, String from, String to, String category, String status, UUID issueId) {
         var range=ReviewDateRange.parse(from,to);
         if(query!=null && query.length()>256) throw new ApiException(400,"INVALID_QUERY","Search text must be at most 256 characters.");
         if (page < 0 || page > 100000 || size < 1 || size > 100 ||
@@ -38,9 +42,10 @@ public class ReviewRepository {
         if (query != null && !query.isBlank()) { where += " AND strpos(lower(review_text), lower(?))>0"; args.add(query.strip()); }
         if (range.start() != null) { where += " AND created_at_steam>=?"; args.add(range.start().atOffset(java.time.ZoneOffset.UTC)); }
         if (range.endExclusive() != null) { where += " AND created_at_steam<?"; args.add(range.endExclusive().atOffset(java.time.ZoneOffset.UTC)); }
-        long total = jdbc.queryForObject("SELECT count(*) FROM playersignal.review" + where, Long.class, args.toArray());
+        where += analyses.reviewFilter(category,status,issueId,args);
+        long total = jdbc.queryForObject("SELECT count(*) FROM playersignal.review_input r" + where, Long.class, args.toArray());
         args.add(size); args.add((long) page * size);
-        var reviews = jdbc.query("SELECT * FROM playersignal.review" + where + " ORDER BY created_at_steam DESC, id LIMIT ? OFFSET ?",
+        var reviews = jdbc.query("SELECT * FROM playersignal.review_input r" + where + " ORDER BY created_at_steam DESC, id LIMIT ? OFFSET ?",
                 (rs, row) -> new Review(rs.getObject("id", UUID.class), rs.getString("steam_recommendation_id"),
                         rs.getString("language"), rs.getString("review_text"), rs.getBoolean("voted_up"), rs.getLong("votes_up"),
                         rs.getLong("playtime_minutes"), rs.getTimestamp("created_at_steam").toInstant(),

@@ -252,3 +252,9 @@ Later: complete F public beta; G paid SaaS.
 - Added private pg_dump backup and empty-target-only transactional restore scripts. They were not executed. Documented isolated restore rehearsal, credential handling, retention proposal and incident/runbook constraints.
 - Added server-generated request IDs and structured-log configuration for production. No request bodies, tokens or query strings are logged by the request timing filter.
 - Static frontend inspection found and fixed a missing JSX delimiter and two unescaped apostrophes. No automated tests/application builds or deployment occurred. Hosting, backup scheduling and monitoring-provider setup remain deferred.
+
+## Review exploration completion
+
+Added current-version category/status/issue filters shared by review pagination and bounded CSV export, preserved in saved URLs. Issue detail links to its matching review list. Obsolete input/model classifications cannot satisfy filters. PENDING means no current analysis; combining it with a category or issue deliberately returns no matches. Workspace ownership and write checks now use the same decoded application path.
+
+Verification: inspected parameterized SQL, correlated game ownership, pagination/export propagation and default compatibility. Frontend typecheck and lint passed for the final filter and drill-down changes. No automated tests/builds or new runtime execution.

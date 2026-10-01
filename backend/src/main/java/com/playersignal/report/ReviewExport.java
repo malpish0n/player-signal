@@ -21,8 +21,12 @@ public class ReviewExport {
     // One database snapshot across all pages; reject limits before sending any download bytes.
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public byte[] csv(UUID game, String language, Boolean votedUp, String q, String from, String to) {
+        return csv(game,language,votedUp,q,from,to,null,null,null);
+    }
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public byte[] csv(UUID game, String language, Boolean votedUp, String q, String from, String to, String category, String status, UUID issueId) {
         games.get(game);
-        var first = reviews.list(game, 0, 100, language, votedUp, q, from, to);
+        var first = reviews.list(game, 0, 100, language, votedUp, q, from, to, category, status, issueId);
         if (first.total() > MAX_ROWS) throw new ApiException(422, "EXPORT_TOO_LARGE", "Export supports up to 5000 matching reviews. Narrow your filters and retry.");
         var output = new ByteArrayOutputStream();
         append(output, "\uFEFF");
@@ -33,7 +37,7 @@ public class ReviewExport {
                 Boolean.toString(r.votedUp()), Long.toString(r.votesUp()), Long.toString(r.playtimeMinutes()),
                 r.createdAtSteam().toString(), r.updatedAtSteam().toString(), r.reviewText()));
             if ((long)(index + 1) * 100 >= first.total()) break;
-            page = reviews.list(game, index + 1, 100, language, votedUp, q, from, to);
+            page = reviews.list(game, index + 1, 100, language, votedUp, q, from, to, category, status, issueId);
         }
         return output.toByteArray();
     }

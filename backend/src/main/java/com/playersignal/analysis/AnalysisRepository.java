@@ -31,6 +31,31 @@ public class AnalysisRepository {
     private String join() {
         return " LEFT JOIN playersignal.review_analysis a ON a.review_id=r.id AND a.input_hash=r.input_hash AND a.provider=? AND a.model=? AND a.prompt_version=? ";
     }
+    /** Correlated filter for the current input/model only; never matches obsolete classifications. */
+    public String reviewFilter(String category, String status, UUID issueId, List<Object> args) {
+        if (category != null && category.isBlank()) category = null;
+        if (status != null && status.isBlank()) status = null;
+        if (category != null) try { Classification.Category.valueOf(category); }
+        catch (IllegalArgumentException error) { throw new com.playersignal.shared.ApiException(400,"INVALID_CATEGORY","Unknown review category."); }
+        if (status != null && !Set.of("PENDING","RUNNING","SUCCEEDED","SKIPPED","FAILED").contains(status))
+            throw new com.playersignal.shared.ApiException(400,"INVALID_STATUS","Unknown analysis status.");
+        if (category == null && status == null && issueId == null) return "";
+        String base = "SELECT 1 FROM playersignal.review_analysis a WHERE a.review_id=r.id AND a.input_hash=r.input_hash AND a.provider=? AND a.model=? AND a.prompt_version=?";
+        String sql = "";
+        if ("PENDING".equals(status)) {
+            sql += " AND NOT EXISTS (" + base + ")";
+            args.addAll(Arrays.asList(identity()));
+            if (category == null && issueId == null) return sql;
+        }
+        args.addAll(Arrays.asList(identity()));
+        if (status != null && !"PENDING".equals(status)) { base += " AND a.status=?"; args.add(status); }
+        if (category != null) { base += " AND a.status='SUCCEEDED' AND a.result->>'primaryCategory'=?"; args.add(category); }
+        if (issueId != null) {
+            base += " AND a.status='SUCCEEDED' AND EXISTS (SELECT 1 FROM playersignal.issue_mention m JOIN playersignal.issue_cluster c ON c.id=m.issue_id WHERE m.analysis_id=a.id AND c.id=? AND c.game_id=r.game_id)";
+            args.add(issueId);
+        }
+        return sql + " AND EXISTS (" + base + ")";
+    }
     public Counts counts(UUID gameId) {
         Object[] identity = identity();
         return jdbc.queryForObject("""

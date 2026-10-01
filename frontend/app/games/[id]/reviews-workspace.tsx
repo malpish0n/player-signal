@@ -11,7 +11,7 @@ import { ReviewExport } from "@/app/review-export";
 import { AnalysisHistory } from "@/app/analysis-history";
 import { AnalysisResult } from '@/app/analysis-result';
 
-export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", to = "", processingOnly = false }: { id: string; page: string; language: string; vote: string; q?: string; from?: string; to?: string; processingOnly?: boolean }) {
+export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", to = "", category = "", status = "", issueId = "", processingOnly = false }: { id: string; page: string; language: string; vote: string; q?: string; from?: string; to?: string; category?: string; status?: string; issueId?: string; processingOnly?: boolean }) {
   const [analysis, setAnalysis] = useState<AnalysisStatus | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [game, setGame] = useState<Game | null>(null);
@@ -27,6 +27,9 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
   if (vote) query.set("votedUp", vote);
   if (from) query.set("from", from);
   if (to) query.set("to", to);
+  if (category) query.set("category", category);
+  if (status) query.set("status", status);
+  if (issueId) query.set("issueId", issueId);
   const reviewQuery = query.toString();
   const load = useCallback(async (signal: AbortSignal) => {
     const results = await Promise.allSettled([
@@ -78,9 +81,12 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
     if (vote) filters.set("vote", vote);
     if (from) filters.set("from", from);
     if (to) filters.set("to", to);
+    if (category) filters.set("category", category);
+    if (status) filters.set("status", status);
+    if (issueId) filters.set("issueId", issueId);
     return `/games/${id}?${filters}`;
   }
-  const filtered = Boolean(language || vote || q || from || to);
+  const filtered = Boolean(language || vote || q || from || to || category || status || issueId);
   return <>
     <div className="workspace-nav"><Link href="/">← All games</Link><Link href={`/games/${id}/issues`}>Issues & evidence →</Link></div>
     <div className="page-heading">
@@ -118,16 +124,19 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
     {!processingOnly && <SavedViews id={id}/>}
     {!processingOnly && <section className="panel">
       <div className="page-heading"><h2>Reviews {reviews ? `· ${reviews.total.toLocaleString()}${filtered ? " matching" : " imported"}` : ""}</h2></div>
-      <form className="filters" action={`/games/${id}`} key={`${language}/${vote}/${q}/${from}/${to}`}>
+      <form className="filters" action={`/games/${id}`} key={`${language}/${vote}/${q}/${from}/${to}/${category}/${status}/${issueId}`}>
         <div><label htmlFor="review-search">Search review text</label><input id="review-search" name="q" defaultValue={q} maxLength={256} placeholder="Search original feedback…" /></div>
         <div><label htmlFor="vote">Recommendation</label><select id="vote" name="vote" defaultValue={vote}><option value="">All reviews</option><option value="true">Recommended</option><option value="false">Not recommended</option></select></div>
         <div><label htmlFor="language">Language code</label><input id="language" name="language" defaultValue={language} placeholder="All languages" pattern="[a-z]{2,32}" maxLength={32} /></div>
         <div><label htmlFor="review-from">From (UTC)</label><input id="review-from" name="from" type="date" defaultValue={from} min="0001-01-01" max="9999-12-31"/></div>
         <div><label htmlFor="review-to">To (UTC, inclusive)</label><input id="review-to" name="to" type="date" defaultValue={to} min="0001-01-01" max="9999-12-31"/></div>
+        <div><label htmlFor="review-category">Category</label><select id="review-category" name="category" defaultValue={category}><option value="">All categories</option>{['BUG','PERFORMANCE','GAMEPLAY','UI_UX','MULTIPLAYER','BALANCE','CONTENT','CONTROLS','AUDIO','LOCALIZATION','POSITIVE','OTHER'].map(value=><option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}</select></div>
+        <div><label htmlFor="review-status">Analysis status</label><select id="review-status" name="status" defaultValue={status}><option value="">All statuses</option>{['PENDING','RUNNING','SUCCEEDED','SKIPPED','FAILED'].map(value=><option key={value}>{value}</option>)}</select></div>
+        {issueId&&<><input type="hidden" name="issueId" value={issueId}/><p>Filtered to one issue. <Link href={`/games/${id}/issues/${issueId}`}>View issue</Link></p></>}
         <button type="submit">Apply filters</button>
         {filtered && <Link href={`/games/${id}`}>Clear filters</Link>}
       </form>
-      <ReviewExport id={id} language={language} vote={vote} q={q} from={from} to={to}/>
+      <ReviewExport id={id} language={language} vote={vote} q={q} from={from} to={to} category={category} status={status} issueId={issueId}/>
       {!reviews && !error && <p role="status">Loading reviews…</p>}
       {reviews?.items.length === 0 && <p className="muted">{filtered ? "No reviews match these filters. Clear them to see all imported feedback." : "No reviews on this page. Run an import or return to the first page."}</p>}
       <div className="review-list">{reviews?.items.map(review => <article key={review.id} className="review">

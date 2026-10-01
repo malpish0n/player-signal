@@ -91,3 +91,11 @@ Date predicates combine with language, vote and text filters in the shared revie
 `GET /api/games/{id}/comparison?date=2026-09-20&days=7` compares `[date−days,date)` with `[date,date+days)`, bounded at UTC midnight. `days` must be 7, 30 or 90. `date` is a required valid calendar date. The after period must end at or before the current instant; otherwise 400 `INCOMPLETE_PERIOD`. Dates outside the supported calendar range return 400. Workspace authorization applies as for other game routes.
 
 Each window returns inclusive `from`/`to` dates, review/recommended counts and nullable `recommendationRate` (0–1). `reviewChangePercent` is 100×(after−before)/before, null when before has zero reviews. `recommendationChangePoints` is 100×(afterRate−beforeRate), null if either rate is missing. `imported` counts all stored reviews; `calculatedAt` timestamps the read. All counts come from one repeatable-read transaction. No data is imported, classified or persisted by this endpoint.
+
+### Saved updates
+
+- `GET /api/games/{id}/updates`: array ordered by release date descending, then UUID; at most 100 records per game.
+- `POST /api/games/{id}/updates`: `{ "title": "Patch 1.2", "releasedOn": "2026-09-20" }` creates a manual release record.
+- `POST /api/games/{id}/updates/{updateId}`: same body plus `version` edits an existing record. Returns 409 if another write changed it; 404 if it belongs to a different game or is missing.
+
+Responses include id, title, releasedOn, version, createdAt and updatedAt. Titles are trimmed, 1–120 characters, with no control characters; dates are valid UTC calendar dates in years 0001–9999. Future/planned dates are allowed. Limit failures return 422; validation returns 400. Workspace authorization and authenticated CSRF protection apply to both writes. No automatic ingestion, analysis or comparison is triggered by saving.

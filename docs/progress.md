@@ -176,3 +176,11 @@ Later: complete F public beta; G paid SaaS.
 - Verification: lint/typecheck and 78 frontend tests passed, including report content, escaping, negative/zero changes, download cleanup and failure retry. Production frontend Docker build passed and the updated frontend is healthy. Backend unchanged; latest backend verification remains 69 passing tests.
 - Browser download produced `playersignal-620-comparison-2026-09-20-7d.md` in Downloads. Inspected file matches the displayed Portal 2 snapshot: 154/433 reviews, 153/420 recommended, 99.4%/97.0%, +181.2% volume and -2.4 percentage points. Source links preserve both exact windows. Screenshot: `/tmp/playersignal-report-export.png`.
 - This delivers deterministic comparison reporting. Managed releases, AI-generated analytical reports, live AI quality evaluation and remaining public-beta work are still pending.
+
+## Milestone F6 — saved release dates
+
+- Added Updates navigation and a per-game list with manual release name/date, creation, editing and 7/30/90-day before/after shortcuts. Planned dates are allowed; comparisons continue to require complete UTC periods.
+- V7 adds game_update. Creation locks the game row while enforcing a 100-record cap. Edits bind both game/update IDs and require the current version; stale edits return 409. Workspace ownership and authenticated CSRF protections apply through the existing filters.
+- Verification: 71 backend tests and 81 frontend tests passed; lint/typecheck and both production Docker builds passed. Coverage includes persistent create/edit, invalid input, cap, stale edits, wrong-game writes, cross-account reads/writes, UI creation/links, retained input on conflict and retry.
+- Main stack upgraded successfully and all services are healthy. The new API returns the expected empty list; browser confirms navigation, form and empty state. No fabricated release was added to the real game; write behavior was verified with isolated database/component fixtures. Screenshot: `/tmp/playersignal-updates.png`.
+- Scope: manually entered release dates only. No Steam patch-note ingestion, deletion, patch-note analysis or automatic causal claims. Public-beta and live AI evaluation work remains pending.

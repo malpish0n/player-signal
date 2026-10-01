@@ -124,7 +124,7 @@ Open a game from the library to view its overview, or visit `/demo/overview` for
 
 Overview supports 7/30/90-day rolling windows, Steam recommendation rate, volume comparisons, accessible daily charts, current classification categories and linked issue evidence. Coverage and issue snapshot metrics retain their own scope and calculation time. A partial import remains explicitly partial. Empty AI results do not produce invented category counts or findings.
 
-Search original review text on the Reviews page. Filter Issues by minimum severity and open a title for source evidence. Processing exposes the existing real sync/analysis actions and error states. Live AI still requires backend configuration described above. Public beta hardening, billing, reports and patch comparisons remain outside this local MVP.
+Search original review text on the Reviews page. Filter Issues by minimum severity and open a title for source evidence. Processing exposes the existing real sync/analysis actions and error states. Live AI still requires backend configuration described above. Public beta hardening and billing remain pending; date comparisons and report exports are available as described below.
 
 ## Accounts and workspaces (milestone F, first slice)
 
@@ -152,6 +152,10 @@ Each review offers **View analysis history**. Expand it to load saved versions, 
 
 ## Before & after
 
-Choose **Before & after** in a game's navigation. Enter a reference date (for example, an update date) and 7, 30 or 90 days on each side. The selected day begins the after period; both windows must be complete UTC days. The view compares imported review volume and Steam recommendation rates and links to the exact reviews in each period. Missing baselines stay explicit. Results describe a partial imported sample and do not establish that an update caused a change. This first version does not store update records or analyze patch notes.
+Choose **Before & after** in a game's navigation. Enter a reference date (for example, an update date) and 7, 30 or 90 days on each side. The selected day begins the after period; both windows must be complete UTC days. The view compares imported review volume and Steam recommendation rates and links to the exact reviews in each period. Missing baselines stay explicit. Results describe a partial imported sample and do not establish that an update caused a change. Saved release dates are available under **Updates**; patch-note analysis remains pending.
 
 The **Download report (.md)** button in Before & after saves the displayed comparison as a Markdown report, including UTC windows, calculation time, counts, recommendation rates, changes and source links. It runs locally in the browser without AI calls. Source links require access to this workspace; localhost links are usable only on the host machine. Subsequent imports may change the linked review lists.
+
+### Saved updates
+
+Open **Updates** in a game to save a release name and UTC date, edit it, or open a 7/30/90-day comparison. Planned dates are allowed, but comparisons require complete periods. Up to 100 updates per game are supported. Concurrent edits are rejected with a reload prompt. These are manually entered records; Steam patch-note ingestion, deletion and automatic patch analysis are not implemented.

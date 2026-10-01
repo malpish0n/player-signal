@@ -1436,6 +1436,221 @@
           }
         }
       }
+    },
+    "/api/games/{id}/updates": {
+      "post": {
+        "summary": "Save a game update",
+        "description": "Manual UTC release date, including planned dates. 100 updates per game. Authenticated writes require CSRF. Editing requires the current version.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "releasedOn"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "releasedOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved update data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid title, date or version"
+          },
+          "401": {
+            "description": "Sign-in required"
+          },
+          "403": {
+            "description": "CSRF failure"
+          },
+          "404": {
+            "description": "Game/update unavailable"
+          },
+          "409": {
+            "description": "Update changed since it was loaded"
+          },
+          "422": {
+            "description": "100-update limit reached"
+          }
+        }
+      },
+      "get": {
+        "summary": "List saved updates newest release first, UUID tie break",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved update data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GameUpdate"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required"
+          },
+          "404": {
+            "description": "Game unavailable"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/updates/{updateId}": {
+      "post": {
+        "summary": "Edit a saved update",
+        "description": "Manual UTC release date, including planned dates. 100 updates per game. Authenticated writes require CSRF. Editing requires the current version.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "updateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "releasedOn",
+                  "version"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "releasedOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved update data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid title, date or version"
+          },
+          "401": {
+            "description": "Sign-in required"
+          },
+          "403": {
+            "description": "CSRF failure"
+          },
+          "404": {
+            "description": "Game/update unavailable"
+          },
+          "409": {
+            "description": "Update changed since it was loaded"
+          },
+          "422": {
+            "description": "100-update limit reached"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2519,6 +2734,44 @@
           "recommendationRate": {
             "type": "number",
             "nullable": true
+          }
+        }
+      },
+      "GameUpdate": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "releasedOn",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "releasedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

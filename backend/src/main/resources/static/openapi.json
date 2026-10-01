@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PlayerSignal local alpha",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404."
   },
   "paths": {
@@ -1191,6 +1191,77 @@
             }
           }
         ]
+      }
+    },
+    "/api/games/{id}/reviews/export": {
+      "get": {
+        "summary": "Download all matching imported reviews as CSV",
+        "description": "Same language, votedUp and literal q filters as reviews. All pages; maximum 5000 rows and 10 MiB, otherwise 422 without a partial download. UTF-8 BOM, CRLF records, quoted fields, spreadsheet formula prefixes escaped with an apostrophe. No AI results, author IDs or raw payloads. Import coverage may be partial.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z]{2,32}$"
+            }
+          },
+          {
+            "name": "votedUp",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment with header plus matching reviews, newest first; Cache-Control: no-store.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filters"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "Game missing or outside current workspace"
+          },
+          "422": {
+            "description": "Export exceeds row or byte limit; narrow filters"
+          }
+        }
       }
     }
   },

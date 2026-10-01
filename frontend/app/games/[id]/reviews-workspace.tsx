@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, Game, Run, ReviewPage, message, parseGame, parseRun, parseReviews } from "@/lib/api";
 
 import { AnalysisStatus, parseAnalysisStatus, parseAnalysisRun } from '@/lib/analysis';
+import { ReviewExport } from "@/app/review-export";
 import { AnalysisResult } from '@/app/analysis-result';
 
 export function ReviewsWorkspace({ id, page, language, vote, q = "", processingOnly = false }: { id: string; page: string; language: string; vote: string; q?: string; processingOnly?: boolean }) {
@@ -113,6 +114,7 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", processingO
         <button type="submit">Apply filters</button>
         {filtered && <Link href={`/games/${id}`}>Clear filters</Link>}
       </form>
+      <ReviewExport id={id} language={language} vote={vote} q={q}/>
       {!reviews && !error && <p role="status">Loading reviews…</p>}
       {reviews?.items.length === 0 && <p className="muted">{filtered ? "No reviews match these filters. Clear them to see all imported feedback." : "No reviews on this page. Run an import or return to the first page."}</p>}
       <div className="review-list">{reviews?.items.map(review => <article key={review.id} className="review">

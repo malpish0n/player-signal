@@ -137,3 +137,7 @@ Sessions and login throttling are held in one backend process. Restarting it sig
 The product, UI, packages, Java namespace, application schema and Compose project are now PlayerSignal. Historical Flyway V1–V4 remain immutable. This upgraded installation retains its existing database login/name and external volume identifiers in ignored `.env` so data survives the rename; new installations use PlayerSignal defaults. Never overwrite an existing `.env` with the example during upgrade.
 
 Workspace pages now check access before loading their data. With accounts enabled, an expired session shows a sign-in screen and preserves the selected game page and filters through login/registration. Returning to a tab rechecks the session. Demo pages stay public; backend failures show an access-check retry instead of treating an outage as a logout.
+
+## Export review evidence
+
+On the Reviews page, apply language, recommendation or text filters, then choose **Export filtered CSV**. The export includes all matching imported reviews across pages, up to 5000 rows / 10 MiB. Larger results require narrower filters and are never silently truncated. Files contain source text and review metadata, with UTC timestamps and formula-prefix protection for spreadsheets. Treat the data as an imported sample; this is the first report feature, not a generated analytical report. Import Steam review IDs as text to preserve their precision.

@@ -1,7 +1,7 @@
 import { sameOrigin } from "@/lib/same-origin";
 import { NextRequest } from "next/server";
 
-const allowedPath = /^(?:auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/[0-9a-f-]{36}(?:\/overview|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}))?|\/analysis|\/reviews(?:\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
+const allowedPath = /^(?:auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/[0-9a-f-]{36}(?:\/overview|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}))?|\/analysis|\/reviews(?:\/export|\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const resource = path.join("/");
@@ -25,11 +25,13 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
       cache: "no-store",
       signal: AbortSignal.timeout(55000),
     });
-    const responseHeaders = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store" });
+    const csv = resource.endsWith('/reviews/export') && response.ok;
+    const responseHeaders = new Headers({ "Content-Type": csv ? "text/csv; charset=UTF-8" : "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+    if (csv) responseHeaders.set("Content-Disposition", `attachment; filename="playersignal-${path[1]}-reviews.csv"`);
     for (const cookie of response.headers.getSetCookie()) {
       if (cookie.startsWith("PLAYERSIGNAL_SESSION=")) responseHeaders.append("Set-Cookie", cookie);
     }
-    return new Response(response.status === 204 ? null : await response.text(), {
+    return new Response(response.status === 204 ? null : await response.arrayBuffer(), {
       status: response.status,
       headers: responseHeaders,
     });

@@ -43,12 +43,14 @@ class AuthIntegrationTest {
  @Test void separateAccountsCanConnectSameAppButCannotAccessEachOthersNestedRoutes()throws Exception{
   var a=register();var b=register();UUID ga=game(a),gb=game(b);assertThat(ga).isNotEqualTo(gb);
   mvc.perform(get("/api/games").session(b.session())).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(ga.toString()))));
-  for(String tail:List.of("","/reviews","/overview","/analysis","/sync/latest","/issues","/issues/"+UUID.randomUUID(),"/reviews/"+UUID.randomUUID()+"/analyses"))mvc.perform(get("/api/games/"+ga+tail).session(b.session())).andExpect(status().isNotFound());
+  for(String tail:List.of("","/reviews","/reviews/export","/overview","/analysis","/sync/latest","/issues","/issues/"+UUID.randomUUID(),"/reviews/"+UUID.randomUUID()+"/analyses"))mvc.perform(get("/api/games/"+ga+tail).session(b.session())).andExpect(status().isNotFound());
   for(String tail:List.of("/sync","/analysis","/issues/rebuild"))mvc.perform(post("/api/games/"+ga+tail).session(b.session()).header("X-CSRF-TOKEN",b.csrf())).andExpect(status().isNotFound());
   // Encoded UUID characters must not bypass the same ownership check.
   String encoded="%"+Integer.toHexString(ga.toString().charAt(0))+ga.toString().substring(1);
   mvc.perform(get(URI.create("/api/games/"+encoded+"/overview")).session(b.session())).andExpect(status().isNotFound());
   mvc.perform(get("/api/games/"+ga+"/overview").session(a.session())).andExpect(status().isOk());
+  mvc.perform(get("/api/games/"+ga+"/reviews/export").session(a.session())).andExpect(status().isOk()).andExpect(header().string("Content-Type","text/csv; charset=UTF-8"));
+  mvc.perform(get("/api/games/"+ga+"/reviews/export")).andExpect(status().isUnauthorized());
  }
  @Test void legacyDataIsNotClaimedByRegistrationAndDuplicateEmailRollsBackWorkspace()throws Exception{
   UUID legacy=UUID.randomUUID();jdbc.update("INSERT INTO playersignal.game(id,steam_app_id,name) VALUES (?,999,'Legacy fixture')",legacy);String email=UUID.randomUUID()+"@example.test";var c=register(anonymous(),email);

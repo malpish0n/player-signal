@@ -83,3 +83,7 @@ Login/registration preserve the requested workspace path and query filters via `
 ReviewExport reuses review-query validation/filtering and traverses bounded pages under one repeatable-read transaction. The result is buffered up to 10 MiB so limit failures produce a normal JSON error before any CSV response is committed. The 5000-row cap bounds traversal; no silent truncation or streaming of a partial file. Current review-page enrichment is reused but AI data is excluded from CSV output. Larger exports and background report jobs are deferred.
 
 The nested game route inherits workspace authorization. CSV records quote every field, double embedded quotes, retain source newlines and prefix potential spreadsheet formulas with an apostrophe. The proxy preserves UTF-8 bytes including BOM, sets a UUID-based filename and prevents caching. Export is read-only, does not invoke providers and does not modify persisted evidence.
+
+## Issue prioritization refinement
+
+The issue list applies category and severity predicates to both count and data queries within one repeatable-read snapshot. Sort strings map to fixed SQL expressions; user input never becomes an order expression. Category values are validated against the classification enum and bound as query parameters. All sorts use a UUID tie breaker, while absent growth baselines use NULLS LAST. Filtering changes displayed rows, not snapshot-wide coverage or persisted metrics. List routes encode filter/sort state in query parameters and retain it across pages.

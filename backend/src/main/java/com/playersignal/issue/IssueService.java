@@ -67,9 +67,30 @@ public class IssueService {
     public Page list(UUID game,int page,int size) { return list(game,page,size,0); }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Page list(UUID game,int page,int size,double minSeverity) {
-        games.get(game);validate(page,size);if(!Double.isFinite(minSeverity)||minSeverity<0||minSeverity>100)throw new ApiException(400,"INVALID_SEVERITY","Minimum severity must be 0–100.");var snapshot=snapshot(game);
-        long total=jdbc.queryForObject("SELECT count(*) FROM playersignal.issue_cluster WHERE game_id=? AND (metrics->>'severityScore')::double precision>=?",Long.class,game,minSeverity);
-        var items=jdbc.query("SELECT * FROM playersignal.issue_cluster WHERE game_id=? AND (metrics->>'severityScore')::double precision>=? ORDER BY (metrics->>'severityScore')::double precision DESC,(metrics->>'mentionCount')::int DESC,id LIMIT ? OFFSET ?",this::summary,game,minSeverity,size,(long)page*size);
+        return list(game,page,size,minSeverity,null,"severity");
+    }
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
+    public Page list(UUID game,int page,int size,double minSeverity,String category,String sort) {
+        games.get(game);validate(page,size);
+        if(!Double.isFinite(minSeverity)||minSeverity<0||minSeverity>100)throw new ApiException(400,"INVALID_SEVERITY","Minimum severity must be 0–100.");
+        if(category!=null && !category.isBlank()) {
+            try { Classification.Category.valueOf(category); }
+            catch(IllegalArgumentException e) { throw new ApiException(400,"INVALID_CATEGORY","Unknown issue category."); }
+        } else category=null;
+        String order=switch(sort) {
+            case "severity" -> "(metrics->>'severityScore')::double precision DESC,(metrics->>'mentionCount')::int DESC,id";
+            case "mentions" -> "(metrics->>'mentionCount')::int DESC,(metrics->>'severityScore')::double precision DESC,id";
+            case "growth" -> "(metrics->>'velocityPercent')::double precision DESC NULLS LAST,(metrics->>'recentMentions')::int DESC,id";
+            case "latest" -> "(metrics->>'lastSeenAt')::timestamptz DESC,id";
+            default -> throw new ApiException(400,"INVALID_SORT","Sort must be severity, mentions, growth or latest.");
+        };
+        var snapshot=snapshot(game);
+        String where=" WHERE game_id=? AND (metrics->>'severityScore')::double precision>=?";
+        var args=new java.util.ArrayList<Object>();args.add(game);args.add(minSeverity);
+        if(category!=null){where+=" AND category=?";args.add(category);}
+        long total=jdbc.queryForObject("SELECT count(*) FROM playersignal.issue_cluster"+where,Long.class,args.toArray());
+        args.add(size);args.add((long)page*size);
+        var items=jdbc.query("SELECT * FROM playersignal.issue_cluster"+where+" ORDER BY "+order+" LIMIT ? OFFSET ?",this::summary,args.toArray());
         return new Page(snapshot,items,page,size,total);
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)

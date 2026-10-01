@@ -141,3 +141,5 @@ Workspace pages now check access before loading their data. With accounts enable
 ## Export review evidence
 
 On the Reviews page, apply language, recommendation or text filters, then choose **Export filtered CSV**. The export includes all matching imported reviews across pages, up to 5000 rows / 10 MiB. Larger results require narrower filters and are never silently truncated. Files contain source text and review metadata, with UTC timestamps and formula-prefix protection for spreadsheets. Treat the data as an imported sample; this is the first report feature, not a generated analytical report. Import Steam review IDs as text to preserve their precision.
+
+The Issues page supports category and minimum-severity filters, plus sorting by severity, mention count, growth or last seen. Settings are URL-addressable and preserved while paging. Growth uses the saved snapshot’s comparison windows; missing baselines sort last rather than being treated as zero growth.

@@ -136,3 +136,12 @@ Later: complete F public beta; G paid SaaS.
 - Verification: all 60 backend tests and 64 frontend tests passed; lint/typecheck and both Docker production builds passed. Integration cases cover filters, pagination, empty files, row/byte limits, escaping and cross-workspace/anonymous export denial.
 - Live verification: full export parsed to 1000 unique reviews; English/not-recommended export contains 12 rows, matching API IDs and source text exactly after documented formula protection. Browser button produced a 3096-byte file in Downloads identical to the HTTP export. Browser automation's download-event wait timed out even though the file was saved; filesystem verification confirmed the download. Preview: `/tmp/playersignal-f3-export.png`.
 - Scope: this is source-evidence export, not a generated analytical report. Import Steam review IDs as text in spreadsheets to avoid numeric precision loss. No schema migration, live AI call or authentication configuration change.
+
+## Issue prioritization — dashboard refinement
+
+- Added exact-category filtering combined with the existing minimum-severity filter. Four descending sort orders: severity, mentions, growth and last seen; default severity behavior preserved.
+- Stable UUID tie breakers; null growth baselines sort last, including after negative growth. Fixed allowlisted SQL order expressions and enum validation reject unknown parameters with 400.
+- URL-addressable controls and pagination preserve filters/sort. UI explains snapshot-based growth and missing baselines; no regrouping or source mutation occurs.
+- Verification: 62 backend tests and 65 frontend tests passed; lint/typecheck and both Docker builds passed. Tests cover all orderings, ties across pages, combined filter counts, invalid parameters and frontend query/pagination state.
+- This completes an outstanding dashboard refinement; full public beta, patch comparisons and generated reports remain pending. Live issue lists remain empty until real analyses are configured; no fixtures are added to customer data.
+- Browser verification: selected BUG and Fastest growth, submitted the form with Enter, and confirmed the resulting URL and retained selections. The existing Portal 2 empty state remains accurate (no live AI analysis). Preview: `/tmp/playersignal-prioritization.png`.

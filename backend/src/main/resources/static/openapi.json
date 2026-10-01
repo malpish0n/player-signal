@@ -742,6 +742,43 @@
               "maximum": 100,
               "default": 0
             }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Exact classification category; omitted or blank includes all.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BUG",
+                "PERFORMANCE",
+                "GAMEPLAY",
+                "UI_UX",
+                "MULTIPLAYER",
+                "BALANCE",
+                "CONTENT",
+                "CONTROLS",
+                "AUDIO",
+                "LOCALIZATION",
+                "POSITIVE",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Descending order with deterministic UUID tie breaker. Growth places missing baselines last.",
+            "schema": {
+              "type": "string",
+              "default": "severity",
+              "enum": [
+                "severity",
+                "mentions",
+                "growth",
+                "latest"
+              ]
+            }
           }
         ],
         "responses": {

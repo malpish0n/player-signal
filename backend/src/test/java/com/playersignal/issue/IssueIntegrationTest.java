@@ -68,4 +68,25 @@ class IssueIntegrationTest {
         assertThat(service.list(game,0,20).snapshot().builtAt()).isEqualTo(first.snapshot().builtAt());
         assertThat(jdbc.queryForObject("SELECT count(*) FROM playersignal.issue_mention",Integer.class)).isEqualTo(6);
     }
+    @Test void filtersAndSortsIssuesWithStablePagesAndMissingGrowthLast() {
+        var initial=service.rebuild(game);var ids=initial.items().stream().map(IssueService.Summary::id).toList();
+        for(int i=0;i<3;i++) jdbc.update("UPDATE playersignal.issue_cluster SET metrics=metrics || ?::jsonb WHERE id=?",
+            "{\"severityScore\":"+(25+i*25)+",\"mentionCount\":"+(i==0?20:10)+",\"velocityPercent\":"+(i==0?"null":i==1?"-25":"100")+",\"lastSeenAt\":\"2026-09-"+(30-i)+"T12:00:00Z\"}",ids.get(i));
+        assertThat(service.list(game,0,20,0,null,"severity").items()).extracting(IssueService.Summary::id).containsExactly(ids.get(2),ids.get(1),ids.get(0));
+        assertThat(service.list(game,0,20,0,null,"mentions").items()).extracting(IssueService.Summary::id).containsExactly(ids.get(0),ids.get(2),ids.get(1));
+        assertThat(service.list(game,0,20,0,null,"growth").items()).extracting(IssueService.Summary::id).containsExactly(ids.get(2),ids.get(1),ids.get(0));
+        assertThat(service.list(game,0,20,0,null,"latest").items()).extracting(IssueService.Summary::id).containsExactlyElementsOf(ids);
+        var filtered=service.list(game,0,20,50,"BUG","mentions");
+        assertThat(filtered.items()).allSatisfy(item->{assertThat(item.category()).isEqualTo("BUG");assertThat(item.metrics().severityScore()).isGreaterThanOrEqualTo(50);});
+        assertThat(filtered.total()).isEqualTo(initial.items().subList(1,3).stream().filter(item->item.category().equals("BUG")).count());
+        jdbc.update("UPDATE playersignal.issue_cluster SET metrics=metrics || '{\"mentionCount\":10,\"severityScore\":50}'::jsonb WHERE game_id=?",game);
+        var full=service.list(game,0,20,0,null,"mentions");
+        for(int i=0;i<3;i++) assertThat(service.list(game,i,1,0,null,"mentions").items().getFirst().id()).isEqualTo(full.items().get(i).id());
+    }
+    @Test void invalidIssueSortAndCategoryAreRejected() {
+        assertThat(http.getForEntity("/api/games/"+game+"/issues?sort=unknown",String.class).getStatusCode().value()).isEqualTo(400);
+        assertThat(http.getForEntity("/api/games/"+game+"/issues?category=unknown",String.class).getStatusCode().value()).isEqualTo(400);
+        assertThat(service.list(game,0,20,0,"AUDIO","latest").items()).isEmpty();
+    }
+
 }

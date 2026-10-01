@@ -73,3 +73,9 @@ Game lists and new connections belong to the current workspace. The same Steam A
 Columns: review_id, steam_review_id, language, recommended, helpful_votes, playtime_minutes, created_at_utc, updated_at_utc, review_text. No author identifiers, raw JSON or AI output. UTF-8 BOM, comma separator, quoted fields with doubled quotes and CRLF record separators; embedded text newlines are retained. Potential formula prefixes (`=`, `+`, `-`, `@`, including after whitespace; leading tabs/newlines) receive a leading apostrophe for spreadsheet use. That is an export-only transformation, never a source edit. Import identifiers as text in spreadsheet software to avoid numeric precision loss.
 
 The same-origin proxy preserves binary bytes, cookie authorization, attachment disposition and no-store headers. The UI downloads a blob only on success; limit/network errors stay inline, and 401 triggers session recovery. The file describes an imported sample, not a complete Steam corpus; the UI explicitly labels that limit.
+
+## Issue prioritization
+
+Issue listing accepts `category` (exact classification enum; blank means all) and `sort=severity|mentions|growth|latest`, together with `minSeverity`, page and size. Unknown category/sort values return 400. Filters apply to both rows and total; snapshot coverage still describes the whole game.
+
+Severity sorts by score then mentions; mentions sorts by count then severity. Growth sorts by velocity descending with null baselines last, then recent mentions. Latest sorts by last-seen timestamp descending. All orders end with UUID for stable ties within a snapshot. Growth reflects the snapshot’s adjacent 7-day windows, not live wall-clock time. Filtering/sorting does not rebuild clusters or change their evidence.

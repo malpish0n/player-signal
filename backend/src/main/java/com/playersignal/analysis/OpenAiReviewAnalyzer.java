@@ -30,7 +30,7 @@ public class OpenAiReviewAnalyzer implements ReviewAnalyzer {
     public OpenAiReviewAnalyzer(AnalysisSettings settings, String key, ObjectMapper mapper, HttpClient http, URI endpoint) {
         this.settings = settings; this.key = key; this.mapper = mapper; this.http = http; this.endpoint = endpoint;
         try (var schemaInput = new ClassPathResource("analysis/classification-schema.json").getInputStream();
-             var promptInput = new ClassPathResource("analysis/prompt-v1.txt").getInputStream()) {
+             var promptInput = new ClassPathResource("analysis/prompt-v2.txt").getInputStream()) {
             schema = mapper.readTree(schemaInput);
             prompt = new String(promptInput.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (java.io.IOException error) { throw new IllegalStateException("Analysis contract resources missing", error); }

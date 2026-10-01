@@ -4,7 +4,7 @@ services:
     environment:
       OLLAMA_URL: http://ollama:11434
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama@sha256:2a6e883b917fc543389599dae79918f5cac9e1438890506982f44aa4f5625d01
     profiles: [local-ai]
     environment:
       OLLAMA_NO_CLOUD: "1"

@@ -18,7 +18,7 @@ public class ConfiguredReviewAnalyzer implements ReviewAnalyzer {
   this.settings=settings;this.mapper=mapper;this.openai=new OpenAiReviewAnalyzer(settings,allowPaid?key:"",mapper);
   URI root=LocalModelEndpoint.origin(url);
   endpoint=root.resolve("/api/chat");
-  try(var p=new ClassPathResource("analysis/prompt-v1.txt").getInputStream();var s=new ClassPathResource("analysis/classification-schema.json").getInputStream()){prompt=new String(p.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);schema=mapper.readTree(s);}catch(java.io.IOException e){throw new IllegalStateException("Missing classification contract",e);}
+  try(var p=new ClassPathResource("analysis/prompt-v2.txt").getInputStream();var s=new ClassPathResource("analysis/classification-schema.json").getInputStream()){prompt=new String(p.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);schema=mapper.readTree(s);}catch(java.io.IOException e){throw new IllegalStateException("Missing classification contract",e);}
  }
  public boolean available(){return switch(settings.mode()){case "local" -> true;case "ollama" -> !settings.model().isBlank();case "openai" -> openai.available();default -> false;};}
  public Output analyze(Input input){
@@ -26,7 +26,7 @@ public class ConfiguredReviewAnalyzer implements ReviewAnalyzer {
   if(settings.mode().equals("openai"))return openai.analyze(input);
   if(!settings.mode().equals("ollama"))throw new AnalysisFailure("NOT_CONFIGURED","Choose a local analysis provider.",false,true);
   try {
-   var body=Map.of("model",settings.model(),"stream",false,"format",schema,"options",Map.of("temperature",0,"num_predict",1200),"messages",List.of(Map.of("role","system","content",prompt),Map.of("role","user","content",mapper.writeValueAsString(Map.of("language",input.language(),"reviewText",input.text())))));
+   var body=Map.of("model",settings.model(),"stream",false,"think",false,"format",schema,"options",Map.of("temperature",0,"num_predict",1200),"messages",List.of(Map.of("role","system","content",prompt),Map.of("role","user","content",mapper.writeValueAsString(Map.of("language",input.language(),"reviewText",input.text())))));
    var request=HttpRequest.newBuilder(endpoint).timeout(Duration.ofSeconds(120)).header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body))).build();
    var response=http.send(request,HttpResponse.BodyHandlers.ofString());
    if(response.statusCode()!=200)throw new AnalysisFailure("LOCAL_MODEL_UNAVAILABLE","Start local Ollama and install the configured model. No cloud fallback is used.",false,true);

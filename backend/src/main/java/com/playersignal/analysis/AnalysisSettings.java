@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public record AnalysisSettings(String mode, String model, int maxReviews, int retryDelayMs) {
-    public static final String PROMPT_VERSION = "review-classification-v1";
+    public static final String PROMPT_VERSION = "review-classification-v2";
     public static final String PROVIDER = "openai";
     public AnalysisSettings(@Value("${playersignal.analysis.provider:disabled}") String mode,
                             @Value("${playersignal.analysis.model:gpt-4o-mini-2024-07-18}") String model,

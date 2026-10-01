@@ -17,4 +17,3 @@ public class WorkspaceContext {
  public void requireOwner(){if(!role().equals("OWNER"))throw new ApiException(403,"OWNER_REQUIRED","Only the workspace owner can perform this action.");}
  public void requireWrite(){if(role().equals("MEMBER"))throw new ApiException(403,"READ_ONLY_MEMBER","Members have read-only access. Ask an owner or admin to make changes.");}
 }
-

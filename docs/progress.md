@@ -231,3 +231,10 @@ Later: complete F public beta; G paid SaaS.
 - Membership is re-read from PostgreSQL for authorization, so revoked access is not retained through a cached session principal. Joining/switching workspaces changes the active workspace; original personal ownership remains intact. Game mutations enforce write roles in the request filter.
 - Settings adds workspace selection, membership, invitations and a workspace-limited recent-job view. No global customer admin access is exposed.
 - Static review covered membership refresh, role gates, invite acceptance/revocation, fallback workspace and proxy routes. No accounts, invitations or grants were created live. Security behavior remains runtime-unverified because tests/builds are disabled for this session.
+
+## Workspace export and explicit deletion controls
+
+- Owners can download a bounded workspace JSON export (5,000 reviews / 10 MiB, with a database-side size preflight), releases, saved reports/views, workflow and membership. Passwords, session/invite tokens, raw reviewer payloads, classification history and job logs are excluded explicitly.
+- Added typed-confirmation game/account deletion, password reauthentication and rate limiting in account mode. Account deletion refuses owned workspaces with other members. Database transaction/advisory locks prevent deleting games while import/analysis/grouping holds its processing lock.
+- Current session is invalidated on account deletion; database-backed membership checks reject stale sessions. No user data was deleted or exported live during implementation.
+- Static review only, including FK ordering, workspace predicates, bounded buffering and worker locking. Restore/retention of backups is an operational concern; this is not a privacy-compliance certification.

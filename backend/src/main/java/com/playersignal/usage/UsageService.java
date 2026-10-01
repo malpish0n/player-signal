@@ -12,16 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UsageService {
  public record Usage(String month,long analysisAttempts,long monthlyLimit,long inputTokens,long outputTokens,long unknownAttempts) {}
+ private final com.playersignal.billing.PlanService plans;
  private final JdbcTemplate jdbc;private final int monthlyLimit;private final int hourlySyncLimit;
- public UsageService(JdbcTemplate jdbc,@Value("${ANALYSIS_MONTHLY_ATTEMPTS:500}")int monthlyLimit,@Value("${SYNC_HOURLY_LIMIT:12}")int hourlySyncLimit){
+ public UsageService(JdbcTemplate jdbc,@Value("${ANALYSIS_MONTHLY_ATTEMPTS:500}")int monthlyLimit,@Value("${SYNC_HOURLY_LIMIT:12}")int hourlySyncLimit,com.playersignal.billing.PlanService plans){
   if(monthlyLimit<0||monthlyLimit>1000000||hourlySyncLimit<1||hourlySyncLimit>1000)throw new IllegalArgumentException("Invalid workspace usage limits");
-  this.jdbc=jdbc;this.monthlyLimit=monthlyLimit;this.hourlySyncLimit=hourlySyncLimit;
+  this.plans=plans;this.jdbc=jdbc;this.monthlyLimit=monthlyLimit;this.hourlySyncLimit=hourlySyncLimit;
  }
  public UUID workspaceForGame(UUID game){return jdbc.queryForObject("SELECT workspace_id FROM playersignal.game WHERE id=?",UUID.class,game);}
  @Transactional public UUID reserve(UUID workspace,UUID game,UUID analysis,String action,String model){
   jdbc.queryForObject("SELECT id FROM playersignal.workspace WHERE id=? FOR UPDATE",UUID.class,workspace);
   Instant now=Instant.now();Instant start;int limit;
-  switch(action){case "ANALYSIS" -> {start=now.atZone(ZoneOffset.UTC).withDayOfMonth(1).toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant();limit=monthlyLimit;}
+  switch(action){case "ANALYSIS" -> {start=now.atZone(ZoneOffset.UTC).withDayOfMonth(1).toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant();limit=plans.limits(workspace).monthlyAttempts();}
    case "SYNC" -> {start=now.minusSeconds(3600);limit=hourlySyncLimit;}
    case "GAME_LOOKUP" -> {start=now.minusSeconds(3600);limit=20;}
    default -> throw new IllegalArgumentException("Unknown usage action");}
@@ -32,6 +33,6 @@ public class UsageService {
  public void finish(UUID id,boolean success,long input,long output){jdbc.update("UPDATE playersignal.usage_event SET status=?,input_tokens=?,output_tokens=?,finished_at=now() WHERE id=? AND status='RESERVED'",success?"SUCCEEDED":"FAILED",Math.max(0,input),Math.max(0,output),id);}
  public Usage status(UUID workspace){
   LocalDate month=LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1);
-  return jdbc.queryForObject("SELECT count(*),coalesce(sum(input_tokens),0),coalesce(sum(output_tokens),0),count(*) FILTER(WHERE status<>'SUCCEEDED') FROM playersignal.usage_event WHERE workspace_id=? AND action='ANALYSIS' AND created_at>=?",(rs,n)->new Usage(month.toString(),rs.getLong(1),monthlyLimit,rs.getLong(2),rs.getLong(3),rs.getLong(4)),workspace,month.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime());
+  return jdbc.queryForObject("SELECT count(*),coalesce(sum(input_tokens),0),coalesce(sum(output_tokens),0),count(*) FILTER(WHERE status<>'SUCCEEDED') FROM playersignal.usage_event WHERE workspace_id=? AND action='ANALYSIS' AND created_at>=?",(rs,n)->new Usage(month.toString(),rs.getLong(1),plans.limits(workspace).monthlyAttempts(),rs.getLong(2),rs.getLong(3),rs.getLong(4)),workspace,month.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime());
  }
 }

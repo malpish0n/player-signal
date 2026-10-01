@@ -1,0 +1,8 @@
+services:
+  stripe-listener:
+    image: stripe/stripe-cli:latest
+    profiles: [billing]
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET_KEY:?Set a sandbox Stripe key}
+      STRIPE_DEVICE_NAME: playersignal-local
+    command: [listen, --forward-to, 'http://backend:8080/api/billing/webhook', --events, 'checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.paid,invoice.payment_failed']

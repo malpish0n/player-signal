@@ -38,7 +38,11 @@ public class DataControlService {
  @Transactional public void deleteAccount(DeleteInput input){
   if(!workspace.enabled())throw new ApiException(409,"LOCAL_MODE","Local mode has no account to delete.");verify(input,"DELETE MY ACCOUNT");UUID user=workspace.user();String email=workspace.principal(user).email();
   var owned=jdbc.query("SELECT workspace_id FROM playersignal.workspace_member WHERE user_id=? AND role='OWNER' ORDER BY workspace_id",(rs,n)->rs.getObject(1,UUID.class),user);
-  for(UUID id:owned){jdbc.queryForObject("SELECT id FROM playersignal.workspace WHERE id=? FOR UPDATE",UUID.class,id);if(jdbc.queryForObject("SELECT count(*) FROM playersignal.workspace_member WHERE workspace_id=? AND user_id<>?",Long.class,id,user)>0)throw new ApiException(409,"WORKSPACE_HAS_MEMBERS","Remove other members from your owned workspaces before deleting your account.");
+  for(UUID id:owned){
+   jdbc.queryForObject("SELECT id FROM playersignal.workspace WHERE id=? FOR UPDATE",UUID.class,id);
+   jdbc.queryForList("SELECT workspace_id FROM playersignal.workspace_billing WHERE workspace_id=? FOR UPDATE",id);
+   if(jdbc.queryForObject("SELECT count(*) FROM playersignal.workspace_billing WHERE workspace_id=? AND (status NOT IN ('none','canceled','incomplete_expired') OR checkout_expires_at>now())",Long.class,id)>0)throw new ApiException(409,"BILLING_ACTIVE","End the workspace subscription in Stripe and wait for any checkout to expire before deleting the account.");
+   jdbc.queryForObject("SELECT id FROM playersignal.workspace WHERE id=? FOR UPDATE",UUID.class,id);if(jdbc.queryForObject("SELECT count(*) FROM playersignal.workspace_member WHERE workspace_id=? AND user_id<>?",Long.class,id,user)>0)throw new ApiException(409,"WORKSPACE_HAS_MEMBERS","Remove other members from your owned workspaces before deleting your account.");
    var games=jdbc.query("SELECT id FROM playersignal.game WHERE workspace_id=? ORDER BY steam_app_id",(rs,n)->rs.getObject(1,UUID.class),id);games.forEach(this::lockGame);jdbc.update("DELETE FROM playersignal.game WHERE workspace_id=?",id);jdbc.update("DELETE FROM playersignal.usage_event WHERE workspace_id=?",id);
   }
   jdbc.update("DELETE FROM playersignal.workspace_invite WHERE email=?",email);jdbc.update("DELETE FROM playersignal.app_user WHERE id=?",user);

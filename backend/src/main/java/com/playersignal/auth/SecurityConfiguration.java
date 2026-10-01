@@ -22,7 +22,8 @@ public class SecurityConfiguration {
    .exceptionHandling(e->e.authenticationEntryPoint((req,res,error)->{res.setStatus(401);res.setContentType("application/json");res.getWriter().write("{\"code\":\"AUTH_REQUIRED\",\"message\":\"Sign in to access your workspace.\"}");})
     .accessDeniedHandler((req,res,error)->{res.setStatus(403);res.setContentType("application/json");res.getWriter().write("{\"code\":\"REQUEST_FORBIDDEN\",\"message\":\"Your session or request token expired. Reload and retry.\"}");}));
   if(workspace.enabled()){
-   http.csrf(c->c.csrfTokenRepository(csrf).csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler())).authorizeHttpRequests(a->a
+   http.csrf(c->c.ignoringRequestMatchers("/api/billing/webhook").csrfTokenRepository(csrf).csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler())).authorizeHttpRequests(a->a
+    .requestMatchers(org.springframework.http.HttpMethod.POST,"/api/billing/webhook").permitAll()
     .requestMatchers(org.springframework.http.HttpMethod.GET,"/api/shared-reports/*").permitAll()
     .requestMatchers("/actuator/health/**","/api/auth/session","/api/auth/register","/api/auth/login","/api/auth/logout","/api/analysis/demo","/api/issues/demo","/api/overview/demo","/error").permitAll()
     .anyRequest().authenticated());

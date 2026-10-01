@@ -17,8 +17,9 @@ public class ReportService {
  public record View(Summary report,JsonNode payload) {}
  public record Excerpt(UUID issueId,String title,String sourceText,String steamReviewId,String model,String promptVersion) {}
  public record Payload(ComparisonService.Comparison comparison,List<String> summary,List<Excerpt> evidence,String method) {}
+ private final com.playersignal.billing.PlanService plans;
  private final JdbcTemplate jdbc;private final ObjectMapper mapper;private final GameRepository games;private final ComparisonService comparison;private final IssueService issues;
- public ReportService(JdbcTemplate jdbc,ObjectMapper mapper,GameRepository games,ComparisonService comparison,IssueService issues){this.jdbc=jdbc;this.mapper=mapper;this.games=games;this.comparison=comparison;this.issues=issues;}
+ public ReportService(JdbcTemplate jdbc,ObjectMapper mapper,GameRepository games,ComparisonService comparison,IssueService issues,com.playersignal.billing.PlanService plans){this.plans=plans;this.jdbc=jdbc;this.mapper=mapper;this.games=games;this.comparison=comparison;this.issues=issues;}
  public List<Summary> list(UUID game){games.get(game);return jdbc.query("SELECT * FROM playersignal.report WHERE game_id=? ORDER BY created_at DESC,id",this::summary,game);}
  public View get(UUID game,UUID id){games.get(game);return jdbc.query("SELECT * FROM playersignal.report WHERE game_id=? AND id=?",(rs,n)->new View(summary(rs,n),tree(rs.getString("payload"))),game,id).stream().findFirst().orElseThrow(()->new ApiException(404,"REPORT_NOT_FOUND","Report not found in this game."));}
  @Transactional(isolation=Isolation.SERIALIZABLE)
@@ -28,7 +29,7 @@ public class ReportService {
   String requestKey=input.type()+":"+input.date()+":"+input.days();
   var existing=jdbc.query("SELECT id,request_key FROM playersignal.report WHERE game_id=? AND request_id=?",(rs,n)->Map.entry(rs.getObject("id",UUID.class),rs.getString("request_key")),game,input.requestId());
   if(!existing.isEmpty()){if(!existing.getFirst().getValue().equals(requestKey))throw new ApiException(409,"REQUEST_REUSED","Use a new requestId for a different report.");return get(game,existing.getFirst().getKey());}
-  if(jdbc.queryForObject("SELECT count(*) FROM playersignal.report WHERE game_id=?",Long.class,game)>=100)throw new ApiException(422,"REPORT_LIMIT","This game has reached its 100-report history limit.");
+  if(jdbc.queryForObject("SELECT count(*) FROM playersignal.report WHERE game_id=?",Long.class,game)>=plans.limits(jdbc.queryForObject("SELECT workspace_id FROM playersignal.game WHERE id=?",UUID.class,game)).reportsPerGame())throw new ApiException(422,"REPORT_LIMIT","This game has reached its plan report-history limit. Existing reports are preserved.");
   Instant now=Instant.now();String date=input.type().equals("WEEKLY")?LocalDate.now(ZoneOffset.UTC).minusDays(7).toString():input.date();int days=input.type().equals("WEEKLY")?7:input.days()==null?7:input.days();
   var data=comparison.get(game,date,days,now);var summary=new ArrayList<String>();var evidence=new ArrayList<Excerpt>();
   if(data.signals().snapshot().stale())summary.add("Issue grouping is missing or stale. Rebuild grouping before interpreting issue changes.");

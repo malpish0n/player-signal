@@ -20,9 +20,10 @@ public class IssueService {
                            Classification classification,double similarity,String model,String promptVersion) {}
     public record Detail(Snapshot snapshot,Summary issue,List<Evidence> evidence,int page,int size,long total) {}
     private record InputState(long count,String fingerprint) {}
+    private final IssueEmbeddingService embeddings;
     private final IssueWorkflow workflow;
     private final JdbcTemplate jdbc;private final DataSource dataSource;private final ObjectMapper mapper;private final AnalysisSettings settings;private final GameRepository games;
-    public IssueService(JdbcTemplate jdbc,DataSource dataSource,ObjectMapper mapper,AnalysisSettings settings,GameRepository games,IssueWorkflow workflow) {this.workflow=workflow;this.jdbc=jdbc;this.dataSource=dataSource;this.mapper=mapper;this.settings=settings;this.games=games;}
+    public IssueService(JdbcTemplate jdbc,DataSource dataSource,ObjectMapper mapper,AnalysisSettings settings,GameRepository games,IssueWorkflow workflow,IssueEmbeddingService embeddings) {this.embeddings=embeddings;this.workflow=workflow;this.jdbc=jdbc;this.dataSource=dataSource;this.mapper=mapper;this.settings=settings;this.games=games;}
     private String eligible() {return """
         FROM playersignal.review_input r JOIN playersignal.review_analysis a ON a.review_id=r.id AND a.input_hash=r.input_hash
         WHERE r.game_id=? AND a.provider=? AND a.model=? AND a.prompt_version=? AND a.status='SUCCEEDED'
@@ -35,8 +36,8 @@ public class IssueService {
     }
     private Snapshot snapshot(UUID game) {
         InputState current=state(jdbc,game);
-        return jdbc.query("SELECT * FROM playersignal.issue_snapshot WHERE game_id=?",(rs,n)->new Snapshot(rs.getTimestamp("built_at").toInstant(),rs.getString("algorithm"),rs.getDouble("threshold"),rs.getInt("source_count"),current.count(),!rs.getString("input_fingerprint").equals(current.fingerprint()) || !rs.getString("algorithm").equals(IssueEngine.VERSION)),game)
-            .stream().findFirst().orElse(new Snapshot(null,IssueEngine.VERSION,IssueEngine.THRESHOLD,0,current.count(),true));
+        return jdbc.query("SELECT * FROM playersignal.issue_snapshot WHERE game_id=?",(rs,n)->new Snapshot(rs.getTimestamp("built_at").toInstant(),rs.getString("algorithm"),rs.getDouble("threshold"),rs.getInt("source_count"),current.count(),!rs.getString("input_fingerprint").equals(current.fingerprint()) || !rs.getString("algorithm").equals(embeddings.algorithm()) || Double.compare(rs.getDouble("threshold"),embeddings.threshold())!=0),game)
+            .stream().findFirst().orElse(new Snapshot(null,embeddings.algorithm(),embeddings.threshold(),0,current.count(),true));
     }
     public Page rebuild(UUID game) {
         var selected=games.get(game);
@@ -48,7 +49,8 @@ public class IssueService {
                 var state=state(lock.jdbc,game);
                 if(state.count()>2000) throw new ApiException(422,"CLUSTER_LIMIT","This alpha supports at most 2000 eligible analyses per game. Existing clusters are preserved.");
                 var sources=lock.jdbc.query("SELECT a.id AS analysis_id,r.id AS review_id,r.steam_recommendation_id,a.source_text,a.source_language,r.created_at_steam,a.result " + eligible()+" ORDER BY r.created_at_steam,a.id",(rs,n)->new IssueEngine.Source(rs.getObject("analysis_id",UUID.class),rs.getObject("review_id",UUID.class),rs.getString("steam_recommendation_id"),rs.getString("source_text"),rs.getString("source_language"),rs.getTimestamp("created_at_steam").toInstant(),read(rs.getString("result"),Classification.class)),args(game));
-                Instant now=Instant.now();var clusters=new IssueEngine().cluster(game,sources,now);
+                var vectors=embeddings.vectors(lock.jdbc,sources);
+                Instant now=Instant.now();var clusters=new IssueEngine().cluster(game,sources,now,s->vectors.get(s.analysisId()),embeddings.algorithm(),embeddings.threshold());
                 lock.jdbc.update("DELETE FROM playersignal.issue_cluster WHERE game_id=?",game);
                 for(var c:clusters) {
                     lock.jdbc.update("INSERT INTO playersignal.issue_cluster(id,game_id,title,category,centroid,metrics) VALUES (?,?,?,?,?::jsonb,?::jsonb)",c.id(),game,c.title(),c.category(),json(c.centroid()),json(c.metrics()));
@@ -57,7 +59,7 @@ public class IssueService {
                 lock.jdbc.update("""
                     INSERT INTO playersignal.issue_snapshot(game_id,built_at,input_fingerprint,algorithm,threshold,source_count) VALUES (?,?,?,?,?,?)
                     ON CONFLICT(game_id) DO UPDATE SET built_at=EXCLUDED.built_at,input_fingerprint=EXCLUDED.input_fingerprint,algorithm=EXCLUDED.algorithm,threshold=EXCLUDED.threshold,source_count=EXCLUDED.source_count
-                    """,game,java.sql.Timestamp.from(now),state.fingerprint(),IssueEngine.VERSION,IssueEngine.THRESHOLD,sources.size());
+                    """,game,java.sql.Timestamp.from(now),state.fingerprint(),embeddings.algorithm(),embeddings.threshold(),sources.size());
                 lock.connection.commit();
             } catch(Exception error) {lock.connection.rollback();throw error;}
             finally {lock.connection.setAutoCommit(true);lock.connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED);}

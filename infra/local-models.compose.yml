@@ -1,0 +1,15 @@
+# Optional overlay: use with infra/docker-compose.yml, after installing a local model.
+services:
+  backend:
+    environment:
+      OLLAMA_URL: http://ollama:11434
+  ollama:
+    image: ollama/ollama:latest
+    profiles: [local-ai]
+    environment:
+      OLLAMA_NO_CLOUD: "1"
+    volumes:
+      - local_models:/root/.ollama
+    # Deliberately no host ports; use the private Compose network.
+volumes:
+  local_models:

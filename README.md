@@ -112,11 +112,11 @@ The adapter uses the [OpenAI Responses API with Structured Outputs](https://deve
 
 ## Group issues (milestone D)
 
-Open **Issues & evidence** from a game, then **Rebuild issues**. The local algorithm groups current actionable analyses using normalized lexical vectors, cosine similarity and matching categories. It makes no additional model calls. With no successful analyses, the page stays empty and links to `/demo/issues`, a separate six-review synthetic corpus.
+Open **Issues & evidence** from a game, then **Rebuild issues**. The local algorithm groups current actionable analyses using normalized lexical vectors, cosine similarity and matching categories. The default lexical mode makes no additional model calls; optional local semantic grouping is described below. With no successful analyses, the page stays empty and links to `/demo/issues`, a separate six-review synthetic corpus.
 
 Issue detail preserves original input text, extracted quotes, source/analysis IDs, model/prompt provenance and similarity. Metrics show mentions, first/last seen, mean severity, negative classification ratio, confidence and two adjacent 7-day mention windows. A missing prior-week baseline is shown explicitly. Results carry a calculation time and become visibly stale when participating analyses change; rebuild to refresh.
 
-The first version rebuilds at most 2000 actionable inputs per game atomically. It preserves the previous snapshot on failure and rejects overlapping rebuilds. Local lexical matching is conservative and may split paraphrases; real-game semantic quality has not yet been evaluated. Detailed formulas and API contracts are in `docs/api.md`. Rebuilds can replace issue IDs when their representative changes. No automatic scheduling, merge/split or issue status editing yet.
+The first version rebuilds at most 2000 actionable inputs per game atomically. It preserves the previous snapshot on failure and rejects overlapping rebuilds. Local lexical matching is conservative and may split paraphrases; real-game semantic quality has not yet been evaluated. Detailed formulas and API contracts are in `docs/api.md`. Rebuilds can replace issue IDs when their representative changes. Opt-in scheduling and manual issue status are available; merge/split remains outside this alpha.
 
 ## Dashboard (milestone E)
 
@@ -167,3 +167,9 @@ New configuration defaults to `ANALYSIS_PROVIDER=local`: conservative English ph
 Optional local model: install/configure Ollama separately, use an installed non-cloud model with `ANALYSIS_PROVIDER=ollama`, `ANALYSIS_MODEL=<model>` and `OLLAMA_URL=http://host.docker.internal:11434` for Docker Desktop (native backend: `http://127.0.0.1:11434`). No model is automatically downloaded. Use an Ollama installation with cloud features disabled and a locally installed model; the local URL alone cannot guarantee how an independently configured server executes a model. PlayerSignal does not select a cloud fallback when the local service fails. Local model quality and hardware requirements must be evaluated before relying on results. The adapter follows [Ollama chat](https://docs.ollama.com/api/chat) and [structured output](https://docs.ollama.com/capabilities/structured-outputs) contracts.
 
 OpenAI is blocked unless **both** `ANALYSIS_PROVIDER=openai` and `ALLOW_PAID_AI=true` are explicitly configured, with a server key and model. Leave `ALLOW_PAID_AI=false` for this project. Changing providers creates a new analysis identity; prior evidence/history is preserved and clusters require rebuilding.
+
+### Optional local semantic grouping
+
+Use `EMBEDDING_PROVIDER=ollama`, `EMBEDDING_MODEL=<installed embedding model>` and a local `OLLAMA_URL`. Keep `OLLAMA_NO_CLOUD=1` on the Ollama server. The optional `infra/local-models.compose.yml` overlay configures that flag and private service access; it does not install or download a model. The default remains lexical, without model calls. No Ollama executable was found on PATH during this implementation.
+
+The adapter follows [Ollama's embedding API](https://docs.ollama.com/api/embed), validates finite normalized vectors and equal dimensions, caches by analysis/input/model/revision and never falls back to a hosted service. Rebuilds preserve old grouping on failure. Threshold 0.78 is an unevaluated starting point, not a quality guarantee. Pin the installed model and change `EMBEDDING_REVISION` when its weights change. Cached vectors are deleted with their source analyses. One request has a 35-second deadline and 32 MiB response cap; larger/cold models can fail visibly. Cloud disabling follows the [official local-only configuration](https://docs.ollama.com/faq#how-do-i-disable-ollama-cloud-features).

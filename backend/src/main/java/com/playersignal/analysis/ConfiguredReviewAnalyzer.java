@@ -16,7 +16,7 @@ public class ConfiguredReviewAnalyzer implements ReviewAnalyzer {
  private final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).followRedirects(HttpClient.Redirect.NEVER).build();
  public ConfiguredReviewAnalyzer(AnalysisSettings settings,ObjectMapper mapper,@Value("${OPENAI_API_KEY:}")String key,@Value("${ALLOW_PAID_AI:false}")boolean allowPaid,@Value("${OLLAMA_URL:http://127.0.0.1:11434}")String url){
   this.settings=settings;this.mapper=mapper;this.openai=new OpenAiReviewAnalyzer(settings,allowPaid?key:"",mapper);
-  URI root=URI.create(url);if(!List.of("localhost","127.0.0.1","[::1]","host.docker.internal").contains(root.getHost())||!"http".equals(root.getScheme())||root.getUserInfo()!=null||root.getQuery()!=null||root.getFragment()!=null||!(root.getPath().isEmpty()||root.getPath().equals("/")))throw new IllegalArgumentException("OLLAMA_URL must be a local HTTP origin");
+  URI root=LocalModelEndpoint.origin(url);
   endpoint=root.resolve("/api/chat");
   try(var p=new ClassPathResource("analysis/prompt-v1.txt").getInputStream();var s=new ClassPathResource("analysis/classification-schema.json").getInputStream()){prompt=new String(p.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);schema=mapper.readTree(s);}catch(java.io.IOException e){throw new IllegalStateException("Missing classification contract",e);}
  }

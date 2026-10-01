@@ -33,16 +33,19 @@ public final class IssueEngine {
     private static double[] unit(double[] v) { double norm=0; for(double d:v) norm+=d*d; if(norm>0) {norm=Math.sqrt(norm); for(int i=0;i<v.length;i++) v[i]/=norm;} return v; }
     public static double cosine(double[] a, double[] b) { double sum=0;for(int i=0;i<a.length;i++) sum+=a[i]*b[i];return Math.max(-1,Math.min(1,sum)); }
     public List<Cluster> cluster(UUID game, List<Source> input, Instant now) {
+        return cluster(game,input,now,s->vector(s.classification().normalizedIssue()),VERSION,THRESHOLD);
+    }
+    public List<Cluster> cluster(UUID game,List<Source> input,Instant now,java.util.function.Function<Source,double[]> vectors,String algorithm,double threshold) {
         var groups=new ArrayList<List<Source>>(); var sums=new ArrayList<double[]>(); var centroids=new ArrayList<double[]>(); var anchors=new ArrayList<double[]>();
         for(var source: input.stream().sorted(Comparator.comparing(Source::seenAt).thenComparing(s->s.analysisId().toString())).toList()) {
             var c=source.classification();
             if(!c.isActionable() || c.normalizedIssue().isBlank() || c.primaryCategory()==Classification.Category.POSITIVE) continue;
-            double[] vector=vector(c.normalizedIssue()); int best=-1; double score=THRESHOLD;
+            double[] vector=vectors.apply(source); int best=-1; double score=threshold;
             for(int i=0;i<groups.size();i++) {
                 if(groups.get(i).getFirst().classification().primaryCategory()!=c.primaryCategory()) continue;
                 double similarity=cosine(vector, centroids.get(i));
                 // Also match the first member to prevent a chain of weakly related complaints.
-                if(similarity>=score && cosine(vector, anchors.get(i))>=THRESHOLD) {best=i;score=similarity;}
+                if(similarity>=score && cosine(vector, anchors.get(i))>=threshold) {best=i;score=similarity;}
             }
             if(best<0) {groups.add(new ArrayList<>(List.of(source)));sums.add(vector.clone());centroids.add(vector.clone());anchors.add(vector.clone());}
             else {groups.get(best).add(source);for(int j=0;j<vector.length;j++) sums.get(best)[j]+=vector[j];centroids.set(best,unit(sums.get(best).clone()));}
@@ -50,8 +53,8 @@ public final class IssueEngine {
         var result=new ArrayList<Cluster>();
         for(int i=0;i<groups.size();i++) {
             var members=groups.get(i);var first=members.getFirst(); var c=first.classification();double[] centroid=unit(sums.get(i));
-            UUID id=UUID.nameUUIDFromBytes((game+":"+VERSION+":"+first.analysisId()).getBytes(StandardCharsets.UTF_8));
-            result.add(new Cluster(id,c.normalizedIssue(),c.primaryCategory().name(),centroid,metrics(members,now),members.stream().map(s->new Member(s,cosine(vector(s.classification().normalizedIssue()),centroid))).toList()));
+            UUID id=UUID.nameUUIDFromBytes((game+":"+algorithm+":"+first.analysisId()).getBytes(StandardCharsets.UTF_8));
+            result.add(new Cluster(id,c.normalizedIssue(),c.primaryCategory().name(),centroid,metrics(members,now),members.stream().map(s->new Member(s,cosine(vectors.apply(s),centroid))).toList()));
         }
         return result.stream().sorted(Comparator.comparingDouble((Cluster c)->c.metrics().severityScore()).reversed().thenComparing(c->c.id().toString())).toList();
     }

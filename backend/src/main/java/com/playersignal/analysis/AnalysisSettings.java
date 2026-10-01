@@ -15,7 +15,7 @@ public record AnalysisSettings(String mode, String model, int maxReviews, int re
         if (model.isBlank() || maxReviews < 1 || maxReviews > 100 || retryDelayMs < 0 || retryDelayMs > 30000)
             throw new IllegalArgumentException("Invalid analysis limits or model");
         if(mode.equals("ollama") && (model.isBlank()||model.toLowerCase(java.util.Locale.ROOT).contains("cloud")))throw new IllegalArgumentException("Choose an installed local model, not a cloud model");
-        this.mode = mode; this.model = mode.equals("local")?"local-rules-v1":model; this.maxReviews = maxReviews; this.retryDelayMs = retryDelayMs;
+        this.mode = mode; this.model = mode.equals("local")?LocalReviewAnalyzer.MODEL:model; this.maxReviews = maxReviews; this.retryDelayMs = retryDelayMs;
     }
     public String provider(){return mode.equals("local")?"local-rules":mode.equals("ollama")?"ollama":"openai";}
 }

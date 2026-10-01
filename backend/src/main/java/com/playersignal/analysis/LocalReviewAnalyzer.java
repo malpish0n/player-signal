@@ -6,6 +6,7 @@ import static com.playersignal.analysis.Classification.*;
 
 /** Conservative English phrase rules applied to actual input, never demonstration fixtures. */
 public final class LocalReviewAnalyzer implements ReviewAnalyzer {
+ public static final String MODEL="local-rules-v2";
  private record Rule(Category category,String title,Pattern pattern) {}
  private static Rule rule(Category c,String title,String regex){return new Rule(c,title,Pattern.compile(regex,Pattern.CASE_INSENSITIVE));}
  private static final List<Rule> RULES=List.of(
@@ -20,9 +21,18 @@ public final class LocalReviewAnalyzer implements ReviewAnalyzer {
  public boolean available(){return true;}
  public Output analyze(Input input){
   for(String sentence:input.text().split("(?<=[.!?])\\s+|\\r?\\n")) {
-   if(sentence.length()>500||NEGATION.matcher(sentence).find())continue;
-   for(var rule:RULES)if(rule.pattern().matcher(sentence).find())return new Output(new Classification(Sentiment.NEGATIVE,rule.category(),Severity.MEDIUM,.35,rule.title(),true,rule.category()==Category.BUG,List.of(sentence),List.of("local-rule","human-review-required")).validate(input.text()),"local-rules-v1",0,0);
+   if(sentence.length()>500)continue;
+   for(var rule:RULES) {
+    var match=rule.pattern().matcher(sentence);
+    while(match.find()) {
+     // Negation inside the failure phrase ("controller doesn't work") expresses the problem.
+     // Negation/resolution outside it ("no longer", "fixed") suppresses this conservative match.
+     String context=sentence.substring(0,match.start())+" "+sentence.substring(match.end());
+     if(NEGATION.matcher(context).find())continue;
+     return new Output(new Classification(Sentiment.NEGATIVE,rule.category(),Severity.MEDIUM,.35,rule.title(),true,rule.category()==Category.BUG,List.of(sentence),List.of("local-rule","human-review-required")).validate(input.text()),MODEL,0,0);
+    }
+   }
   }
-  return new Output(new Classification(Sentiment.MIXED,Category.OTHER,Severity.LOW,.1,"",false,false,List.of(),List.of("local-rule","unclassified")).validate(input.text()),"local-rules-v1",0,0);
+  return new Output(new Classification(Sentiment.MIXED,Category.OTHER,Severity.LOW,.1,"",false,false,List.of(),List.of("local-rule","unclassified")).validate(input.text()),MODEL,0,0);
  }
 }

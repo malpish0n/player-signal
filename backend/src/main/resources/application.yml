@@ -41,6 +41,6 @@ playersignal:
     page-delay-ms: ${STEAM_PAGE_DELAY_MS:500}
   analysis:
     provider: ${ANALYSIS_PROVIDER:local}
-    model: ${ANALYSIS_MODEL:${OPENAI_MODEL:local-rules-v1}}
+    model: ${ANALYSIS_MODEL:${OPENAI_MODEL:local-rules-v2}}
     max-reviews: ${ANALYSIS_MAX_REVIEWS:25}
     retry-delay-ms: ${ANALYSIS_RETRY_DELAY_MS:500}

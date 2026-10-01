@@ -27,7 +27,7 @@ services:
       AUTH_ENABLED: "true"
       AUTH_COOKIE_SECURE: "true"
       ANALYSIS_PROVIDER: local
-      ANALYSIS_MODEL: local-rules-v1
+      ANALYSIS_MODEL: local-rules-v2
       ALLOW_PAID_AI: "false"
       ANALYSIS_MONTHLY_ATTEMPTS: ${ANALYSIS_MONTHLY_ATTEMPTS:-500}
       SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-false}

@@ -290,3 +290,7 @@ Added local Ollama embedding adapter, input/model/revision cache, dimension and 
 ## Patch snapshot completion
 
 Before & after now saves PATCH snapshots using the selected date/window and a persistent retry idempotency key, with a link to the saved report/sharing controls. Saving explicitly recalculates against current data rather than claiming to freeze an older browser response. Alert evaluation now runs at REPEATABLE READ so comparison and evidence inspect one database snapshot. No report was created in the live database; frontend type/lint inspection follows.
+
+## Conservative local rule correction
+
+Static review found that the global negation check suppressed the explicitly supported phrases “controller doesn't work” and “audio does not work”. Negation is now checked outside the matched failure phrase, so “no longer”/“fixed” still suppress a match while failure wording itself is allowed. Bumped local analysis identity to local-rules-v2 to avoid serving cached v1 results under changed semantics. Manual source walkthrough only, no executed classification test.

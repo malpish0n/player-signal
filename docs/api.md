@@ -79,3 +79,9 @@ The same-origin proxy preserves binary bytes, cookie authorization, attachment d
 Issue listing accepts `category` (exact classification enum; blank means all) and `sort=severity|mentions|growth|latest`, together with `minSeverity`, page and size. Unknown category/sort values return 400. Filters apply to both rows and total; snapshot coverage still describes the whole game.
 
 Severity sorts by score then mentions; mentions sorts by count then severity. Growth sorts by velocity descending with null baselines last, then recent mentions. Latest sorts by last-seen timestamp descending. All orders end with UUID for stable ties within a snapshot. Growth reflects the snapshot’s adjacent 7-day windows, not live wall-clock time. Filtering/sorting does not rebuild clusters or change their evidence.
+
+## Review date ranges
+
+Both review listing and CSV export accept optional `from` and `to` in strict `YYYY-MM-DD` format (years 0001–9999). Dates filter the Steam review creation timestamp, not its last edit or import. Bounds are inclusive calendar days in UTC: `from=2026-10-01&to=2026-10-01` selects `[2026-10-01T00:00:00Z, 2026-10-02T00:00:00Z)`. Either bound may be omitted; blank values mean no bound. Invalid dates or `from > to` return 400 `INVALID_DATE_RANGE`.
+
+Date predicates combine with language, vote and text filters in the shared review repository and apply before counting/pagination. CSV traverses the same filtered snapshot. Review dates shown in the explorer use UTC to match the controls. These filters do not alter import scope, analysis batches or persisted data.

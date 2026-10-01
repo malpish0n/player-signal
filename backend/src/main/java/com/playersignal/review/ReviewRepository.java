@@ -22,6 +22,11 @@ public class ReviewRepository {
     public Page list(UUID gameId, int page, int size, String language, Boolean votedUp) { return list(gameId,page,size,language,votedUp,null); }
     @org.springframework.transaction.annotation.Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Page list(UUID gameId, int page, int size, String language, Boolean votedUp, String query) {
+        return list(gameId,page,size,language,votedUp,query,null,null);
+    }
+    @org.springframework.transaction.annotation.Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Page list(UUID gameId, int page, int size, String language, Boolean votedUp, String query, String from, String to) {
+        var range=ReviewDateRange.parse(from,to);
         if(query!=null && query.length()>256) throw new ApiException(400,"INVALID_QUERY","Search text must be at most 256 characters.");
         if (page < 0 || page > 100000 || size < 1 || size > 100 ||
                 (language != null && !language.matches("[a-z]{2,32}")))
@@ -31,6 +36,8 @@ public class ReviewRepository {
         if (language != null) { where += " AND language=?"; args.add(language); }
         if (votedUp != null) { where += " AND voted_up=?"; args.add(votedUp); }
         if (query != null && !query.isBlank()) { where += " AND strpos(lower(review_text), lower(?))>0"; args.add(query.strip()); }
+        if (range.start() != null) { where += " AND created_at_steam>=?"; args.add(range.start().atOffset(java.time.ZoneOffset.UTC)); }
+        if (range.endExclusive() != null) { where += " AND created_at_steam<?"; args.add(range.endExclusive().atOffset(java.time.ZoneOffset.UTC)); }
         long total = jdbc.queryForObject("SELECT count(*) FROM playersignal.review" + where, Long.class, args.toArray());
         args.add(size); args.add((long) page * size);
         var reviews = jdbc.query("SELECT * FROM playersignal.review" + where + " ORDER BY created_at_steam DESC, id LIMIT ? OFFSET ?",

@@ -11,8 +11,8 @@ public class ReviewExportController {
     public ReviewExportController(ReviewExport export) { this.export = export; }
     @GetMapping
     public ResponseEntity<byte[]> csv(@PathVariable UUID id, @RequestParam(required=false) String language,
-            @RequestParam(required=false) Boolean votedUp, @RequestParam(required=false) String q) {
-        byte[] content = export.csv(id, language, votedUp, q);
+            @RequestParam(required=false) Boolean votedUp, @RequestParam(required=false) String q, @RequestParam(required=false) String from, @RequestParam(required=false) String to) {
+        byte[] content = export.csv(id, language, votedUp, q, from, to);
         return ResponseEntity.ok().header("Content-Type", "text/csv; charset=UTF-8")
             .header("Content-Disposition", "attachment; filename=\"playersignal-" + id + "-reviews.csv\"")
             .header("Cache-Control", "no-store").header("X-Content-Type-Options", "nosniff").body(content);

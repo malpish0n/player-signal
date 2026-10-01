@@ -9,8 +9,8 @@ it('exports applied filters across pages and downloads the received CSV',async()
  const fetch=vi.fn().mockResolvedValue(new Response('\uFEFF"review_text"\r\n"test"',{headers:{'Content-Type':'text/csv; charset=UTF-8'}}));vi.stubGlobal('fetch',fetch);
  const create=vi.fn().mockReturnValue('blob:test');Object.defineProperty(URL,'createObjectURL',{configurable:true,value:create});Object.defineProperty(URL,'revokeObjectURL',{configurable:true,value:vi.fn()});
  const click=vi.spyOn(HTMLAnchorElement.prototype,'click').mockImplementation(()=>{});
- render(<ReviewExport id="game" language="polish" vote="false" q="100%"/>);await userEvent.click(screen.getByRole('button',{name:'Export filtered CSV'}));
- await screen.findByRole('button',{name:'Export filtered CSV'});expect(fetch.mock.calls[0][0]).toBe('/api/games/game/reviews/export?language=polish&votedUp=false&q=100%25');expect(create).toHaveBeenCalled();expect(click).toHaveBeenCalledOnce();
+ render(<ReviewExport id="game" language="polish" vote="false" q="100%" from="2026-09-01" to="2026-09-30"/>);await userEvent.click(screen.getByRole('button',{name:'Export filtered CSV'}));
+ await screen.findByRole('button',{name:'Export filtered CSV'});expect(fetch.mock.calls[0][0]).toBe('/api/games/game/reviews/export?language=polish&votedUp=false&q=100%25&from=2026-09-01&to=2026-09-30');expect(create).toHaveBeenCalled();expect(click).toHaveBeenCalledOnce();
 });
 it('keeps download errors visible and allows retry',async()=>{
  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({message:'Narrow your filters.'},{status:422})));

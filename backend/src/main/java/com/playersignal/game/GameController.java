@@ -38,8 +38,8 @@ public class GameController {
     }
     @GetMapping("/{id}/reviews") public ReviewRepository.Page reviews(@PathVariable UUID id,
             @RequestParam(defaultValue="0") int page, @RequestParam(defaultValue="20") int size,
-            @RequestParam(required=false) String language, @RequestParam(required=false) Boolean votedUp, @RequestParam(required=false) String q) {
+            @RequestParam(required=false) String language, @RequestParam(required=false) Boolean votedUp, @RequestParam(required=false) String q, @RequestParam(required=false) String from, @RequestParam(required=false) String to) {
         games.get(id);
-        return reviews.list(id, page, size, language, votedUp, q);
+        return reviews.list(id, page, size, language, votedUp, q, from, to);
     }
 }

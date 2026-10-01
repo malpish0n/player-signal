@@ -87,3 +87,7 @@ The nested game route inherits workspace authorization. CSV records quote every 
 ## Issue prioritization refinement
 
 The issue list applies category and severity predicates to both count and data queries within one repeatable-read snapshot. Sort strings map to fixed SQL expressions; user input never becomes an order expression. Category values are validated against the classification enum and bound as query parameters. All sorts use a UUID tie breaker, while absent growth baselines use NULLS LAST. Filtering changes displayed rows, not snapshot-wide coverage or persisted metrics. List routes encode filter/sort state in query parameters and retain it across pages.
+
+## UTC review date filters
+
+ReviewDateRange validates calendar dates and produces an inclusive UTC start and exclusive next-day UTC end. ReviewRepository binds OffsetDateTime parameters, independently of database/JVM local timezone. Both count and row queries share the predicates; export reuses the same repository for every page under its repeatable-read transaction. A missing bound leaves that side open. No schema change or data rewrite is needed. Browser controls and rendered review dates explicitly use UTC, and query parameters carry bounds through pagination and export.

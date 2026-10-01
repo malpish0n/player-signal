@@ -2,7 +2,7 @@
 import {useState} from 'react';
 import {message} from '@/lib/api';
 import {SESSION_REQUIRED_EVENT} from '@/lib/account-navigation';
-export function ReviewExport({id, language, vote, q}: {id:string; language:string; vote:string; q:string}) {
+export function ReviewExport({id, language, vote, q, from="", to=""}: {id:string; language:string; vote:string; q:string; from?:string; to?:string}) {
   const [busy,setBusy]=useState(false), [error,setError]=useState('');
   async function download() {
     setBusy(true);setError('');
@@ -11,6 +11,8 @@ export function ReviewExport({id, language, vote, q}: {id:string; language:strin
       if(language) query.set('language',language);
       if(vote) query.set('votedUp',vote);
       if(q) query.set('q',q);
+      if(from) query.set('from',from);
+      if(to) query.set('to',to);
       const response=await fetch(`/api/games/${id}/reviews/export?${query}`,{cache:'no-store'});
       if(response.status===401) window.dispatchEvent(new Event(SESSION_REQUIRED_EVENT));
       if(!response.ok) {

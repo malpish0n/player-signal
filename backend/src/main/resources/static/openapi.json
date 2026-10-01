@@ -470,6 +470,24 @@
               "maxLength": 256
             },
             "description": "Literal case-insensitive substring of original review text"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive creation date, UTC midnight. Omitted means no lower bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Inclusive creation date, through the entire UTC day. Omitted means no upper bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
           }
         ],
         "responses": {
@@ -1271,6 +1289,24 @@
             "schema": {
               "type": "string",
               "maxLength": 256
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive creation date, UTC midnight. Omitted means no lower bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Inclusive creation date, through the entire UTC day. Omitted means no upper bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "schema": {
+              "type": "string",
+              "format": "date"
             }
           }
         ],

@@ -7,7 +7,7 @@ import { AnalysisStatus, parseAnalysisStatus, parseAnalysisRun } from '@/lib/ana
 import { ReviewExport } from "@/app/review-export";
 import { AnalysisResult } from '@/app/analysis-result';
 
-export function ReviewsWorkspace({ id, page, language, vote, q = "", processingOnly = false }: { id: string; page: string; language: string; vote: string; q?: string; processingOnly?: boolean }) {
+export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", to = "", processingOnly = false }: { id: string; page: string; language: string; vote: string; q?: string; from?: string; to?: string; processingOnly?: boolean }) {
   const [analysis, setAnalysis] = useState<AnalysisStatus | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [game, setGame] = useState<Game | null>(null);
@@ -21,6 +21,8 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", processingO
   if (language) query.set("language", language);
   if (q) query.set("q", q);
   if (vote) query.set("votedUp", vote);
+  if (from) query.set("from", from);
+  if (to) query.set("to", to);
   const reviewQuery = query.toString();
   const load = useCallback(async (signal: AbortSignal) => {
     const results = await Promise.allSettled([
@@ -70,9 +72,11 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", processingO
     if (language) filters.set("language", language);
     if (q) filters.set("q", q);
     if (vote) filters.set("vote", vote);
+    if (from) filters.set("from", from);
+    if (to) filters.set("to", to);
     return `/games/${id}?${filters}`;
   }
-  const filtered = Boolean(language || vote || q);
+  const filtered = Boolean(language || vote || q || from || to);
   return <>
     <div className="workspace-nav"><Link href="/">← All games</Link><Link href={`/games/${id}/issues`}>Issues & evidence →</Link></div>
     <div className="page-heading">
@@ -107,18 +111,20 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", processingO
     </section>
     {!processingOnly && <section className="panel">
       <div className="page-heading"><h2>Reviews {reviews ? `· ${reviews.total.toLocaleString()}${filtered ? " matching" : " imported"}` : ""}</h2></div>
-      <form className="filters" action={`/games/${id}`} key={`${language}/${vote}/${q}`}>
+      <form className="filters" action={`/games/${id}`} key={`${language}/${vote}/${q}/${from}/${to}`}>
         <div><label htmlFor="review-search">Search review text</label><input id="review-search" name="q" defaultValue={q} maxLength={256} placeholder="Search original feedback…" /></div>
         <div><label htmlFor="vote">Recommendation</label><select id="vote" name="vote" defaultValue={vote}><option value="">All reviews</option><option value="true">Recommended</option><option value="false">Not recommended</option></select></div>
         <div><label htmlFor="language">Language code</label><input id="language" name="language" defaultValue={language} placeholder="All languages" pattern="[a-z]{2,32}" maxLength={32} /></div>
+        <div><label htmlFor="review-from">From (UTC)</label><input id="review-from" name="from" type="date" defaultValue={from} min="0001-01-01" max="9999-12-31"/></div>
+        <div><label htmlFor="review-to">To (UTC, inclusive)</label><input id="review-to" name="to" type="date" defaultValue={to} min="0001-01-01" max="9999-12-31"/></div>
         <button type="submit">Apply filters</button>
         {filtered && <Link href={`/games/${id}`}>Clear filters</Link>}
       </form>
-      <ReviewExport id={id} language={language} vote={vote} q={q}/>
+      <ReviewExport id={id} language={language} vote={vote} q={q} from={from} to={to}/>
       {!reviews && !error && <p role="status">Loading reviews…</p>}
       {reviews?.items.length === 0 && <p className="muted">{filtered ? "No reviews match these filters. Clear them to see all imported feedback." : "No reviews on this page. Run an import or return to the first page."}</p>}
       <div className="review-list">{reviews?.items.map(review => <article key={review.id} className="review">
-        <div className="review-meta"><strong className={review.votedUp ? "healthy" : "warning"}>{review.votedUp ? "Recommended" : "Not recommended"}</strong><span>{review.language}</span><span>{(review.playtimeMinutes / 60).toFixed(1)} h played</span><time dateTime={review.createdAtSteam}>{new Date(review.createdAtSteam).toLocaleDateString()}</time></div>
+        <div className="review-meta"><strong className={review.votedUp ? "healthy" : "warning"}>{review.votedUp ? "Recommended" : "Not recommended"}</strong><span>{review.language}</span><span>{(review.playtimeMinutes / 60).toFixed(1)} h played</span><time dateTime={review.createdAtSteam}>{new Date(review.createdAtSteam).toLocaleDateString(undefined, {timeZone:"UTC"})}</time></div>
         <p className="review-text">{review.reviewText || "(No written review text)"}</p>
         <div className="muted">Steam review #{review.steamRecommendationId} · {review.votesUp} helpful votes</div>
         <AnalysisResult analysis={review.analysis} />

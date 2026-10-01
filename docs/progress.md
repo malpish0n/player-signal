@@ -145,3 +145,11 @@ Later: complete F public beta; G paid SaaS.
 - Verification: 62 backend tests and 65 frontend tests passed; lint/typecheck and both Docker builds passed. Tests cover all orderings, ties across pages, combined filter counts, invalid parameters and frontend query/pagination state.
 - This completes an outstanding dashboard refinement; full public beta, patch comparisons and generated reports remain pending. Live issue lists remain empty until real analyses are configured; no fixtures are added to customer data.
 - Browser verification: selected BUG and Fastest growth, submitted the form with Enter, and confirmed the resulting URL and retained selections. The existing Portal 2 empty state remains accurate (no live AI analysis). Preview: `/tmp/playersignal-prioritization.png`.
+
+## Review exploration — UTC date ranges
+
+- Added optional From/To calendar dates to review browsing and CSV export. Dates refer to Steam creation time; both ends include the selected UTC day. Either bound can be omitted.
+- Shared backend validation rejects impossible/reversed dates with 400. Timestamp predicates use explicit UTC offsets, apply before count/pagination and remain consistent across export pages. No schema/data changes.
+- UI preserves the range in URL pagination/export, resets pagination when applying filters and renders review dates in UTC. Existing language/vote/text filters combine with the range.
+- Verification: 66 backend tests and 66 frontend tests passed; lint/typecheck and Docker builds passed. Cases cover leap days, open bounds, invalid inputs, midnight boundaries, a 103-row filtered export spanning pages, and frontend query/date/pagination propagation. Test fixture timestamps explicitly specify UTC so expectations do not depend on the host timezone.
+- Live check: English, not-recommended reviews created 2026-09-26 through 2026-09-29 UTC produced 3 rows; CSV IDs/count and timestamps matched the list. Browser form submission retained both dates and showed the same 3 matching reviews. Screenshot: `/tmp/playersignal-date-filters.png`. Original 1000-review dataset and local auth mode remain unchanged.

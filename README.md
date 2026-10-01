@@ -153,3 +153,5 @@ Each review offers **View analysis history**. Expand it to load saved versions, 
 ## Before & after
 
 Choose **Before & after** in a game's navigation. Enter a reference date (for example, an update date) and 7, 30 or 90 days on each side. The selected day begins the after period; both windows must be complete UTC days. The view compares imported review volume and Steam recommendation rates and links to the exact reviews in each period. Missing baselines stay explicit. Results describe a partial imported sample and do not establish that an update caused a change. This first version does not store update records or analyze patch notes.
+
+The **Download report (.md)** button in Before & after saves the displayed comparison as a Markdown report, including UTC windows, calculation time, counts, recommendation rates, changes and source links. It runs locally in the browser without AI calls. Source links require access to this workspace; localhost links are usable only on the host machine. Subsequent imports may change the linked review lists.

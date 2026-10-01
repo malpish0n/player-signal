@@ -99,3 +99,7 @@ The review list mounts a history reader only when requested. It uses the existin
 ## Date comparison foundation
 
 ComparisonService aggregates Steam recommendation votes in two equal complete UTC windows within a repeatable-read transaction. Explicit OffsetDateTime query parameters avoid JVM timezone dependence. It reuses the overview delta formulas and the date parser. No AI sentiment or cluster snapshot is conflated with Steam votes. The UI encodes date/window selection in its URL and links to existing review date filters; cookie authorization and safe post-login return routing include the comparison page. This is a read-only foundation for patch comparisons; managed updates, patch notes and causal attribution are outside scope.
+
+### Comparison report export
+
+The comparison screen serializes its already-authorized, displayed response into a downloadable UTF-8 Markdown Blob. No additional query, backend endpoint, persistence or provider invocation occurs. Reports preserve the calculation timestamp and snapshot metrics, distinguish null baselines from zero change, and link to the two inclusive UTC review windows on the current origin. Imported game names are escaped as plain Markdown text, including HTML metacharacters. Object URLs are released after download initiation. Source links retain workspace authorization and can reflect later imports; exported metrics remain fixed. This is a deterministic comparison report, not generated analytical recommendations.

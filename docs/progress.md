@@ -168,3 +168,11 @@ Later: complete F public beta; G paid SaaS.
 - Verification: 69 backend tests and 74 frontend tests passed; lint/typecheck and both production Docker builds passed. Integration coverage includes UTC boundaries, empty/one-sided samples, validation and cross-workspace denial.
 - Restarted the preserved local stack; all three services are healthy. Browser form submission for 2026-09-20 / 7 days showed 154 reviews (153 recommended) before and 433 (420 recommended) after. The evidence link opened the matching 433-review range. All 1000 imported reviews remain available. Screenshot: `/tmp/playersignal-comparison.png`.
 - Scope: date-based comparison is a foundation for patch analysis, not managed release records or proof of causation. Imported sample coverage and incomplete AI evaluation remain explicit. Milestones A–E are implemented; F remains in progress and G has not started.
+
+## Milestone F5 — downloadable comparison report
+
+- Before & after now offers a UTF-8 Markdown report with the displayed snapshot, calculation time, inclusive UTC windows, Steam recommendation metrics, changes and workspace source links.
+- Preserves missing baselines instead of reporting zero; escapes imported names for Markdown/HTML renderers. Includes sample-coverage, causation, localhost/access and subsequent-import caveats. Browser-only export; no new data writes, API endpoint or AI calls.
+- Verification: lint/typecheck and 78 frontend tests passed, including report content, escaping, negative/zero changes, download cleanup and failure retry. Production frontend Docker build passed and the updated frontend is healthy. Backend unchanged; latest backend verification remains 69 passing tests.
+- Browser download produced `playersignal-620-comparison-2026-09-20-7d.md` in Downloads. Inspected file matches the displayed Portal 2 snapshot: 154/433 reviews, 153/420 recommended, 99.4%/97.0%, +181.2% volume and -2.4 percentage points. Source links preserve both exact windows. Screenshot: `/tmp/playersignal-report-export.png`.
+- This delivers deterministic comparison reporting. Managed releases, AI-generated analytical reports, live AI quality evaluation and remaining public-beta work are still pending.

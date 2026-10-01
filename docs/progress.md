@@ -211,3 +211,10 @@ Later: complete F public beta; G paid SaaS.
 - Workspace-scoped list/detail routes, UUID idempotency keys, 100-report cap and serializable creation transaction. Reused keys with different requests return 409; serialization conflicts can be retried with the original key. No external summary model is invoked.
 - Reports page provides history, retained evidence, comparison detail, Markdown comparison export and browser print/PDF styling. Reports are private; there is no public sharing bypass.
 - Manually checked request/response alignment, preservation of snapshots, same-game evidence joins, idempotency and transaction isolation. No automated checks/build or runtime verification under the owner's current constraint.
+
+## Issue investigation workflow and saved views
+
+- V10 stores manual issue states keyed by game/category/normalized title, preserving them across matching rebuilds, and up to 20 saved review/issue URL views per game.
+- Issue detail adds 7/30/90-day current-version mention timelines, explicit analyzed-review denominators and a transparent weighted investigation-priority calculation. Zero after-period mentions produce zero priority; missing/stale groupings remain visible.
+- Same-game validation and existing workspace/CSRF protection cover preference writes. Saved URLs are restricted to review/issue pages of the same game; no external redirects or arbitrary schemes are accepted. Saved view removal affects only the matching game's record.
+- Static review only: checked transaction caps, route allowlist, normalized workflow keys and UI error/loading branches. No tests/builds/runtime claim. Priority is separate from legacy average-severity sorting; semantic clustering quality and remaining exploration filters are still open.

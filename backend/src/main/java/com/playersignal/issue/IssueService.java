@@ -20,8 +20,9 @@ public class IssueService {
                            Classification classification,double similarity,String model,String promptVersion) {}
     public record Detail(Snapshot snapshot,Summary issue,List<Evidence> evidence,int page,int size,long total) {}
     private record InputState(long count,String fingerprint) {}
+    private final IssueWorkflow workflow;
     private final JdbcTemplate jdbc;private final DataSource dataSource;private final ObjectMapper mapper;private final AnalysisSettings settings;private final GameRepository games;
-    public IssueService(JdbcTemplate jdbc,DataSource dataSource,ObjectMapper mapper,AnalysisSettings settings,GameRepository games) {this.jdbc=jdbc;this.dataSource=dataSource;this.mapper=mapper;this.settings=settings;this.games=games;}
+    public IssueService(JdbcTemplate jdbc,DataSource dataSource,ObjectMapper mapper,AnalysisSettings settings,GameRepository games,IssueWorkflow workflow) {this.workflow=workflow;this.jdbc=jdbc;this.dataSource=dataSource;this.mapper=mapper;this.settings=settings;this.games=games;}
     private String eligible() {return """
         FROM playersignal.review_input r JOIN playersignal.review_analysis a ON a.review_id=r.id AND a.input_hash=r.input_hash
         WHERE r.game_id=? AND a.provider=? AND a.model=? AND a.prompt_version=? AND a.status='SUCCEEDED'
@@ -91,7 +92,8 @@ public class IssueService {
         long total=jdbc.queryForObject("SELECT count(*) FROM playersignal.issue_cluster"+where,Long.class,args.toArray());
         args.add(size);args.add((long)page*size);
         var items=jdbc.query("SELECT * FROM playersignal.issue_cluster"+where+" ORDER BY "+order+" LIMIT ? OFFSET ?",this::summary,args.toArray());
-        return new Page(snapshot,items,page,size,total);
+        var states=workflow.states(game);
+        return new Page(snapshot,items.stream().map(v->new Summary(v.id(),v.title(),v.category(),states.getOrDefault(IssueWorkflow.key(v.category(),v.title()),"OPEN"),v.metrics())).toList(),page,size,total);
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Detail detail(UUID game,UUID issue,int page,int size) {
@@ -102,6 +104,7 @@ public class IssueService {
             FROM playersignal.issue_mention m JOIN playersignal.review_analysis a ON a.id=m.analysis_id JOIN playersignal.review r ON r.id=a.review_id
             WHERE m.issue_id=? AND r.game_id=? ORDER BY m.similarity DESC,a.id LIMIT ? OFFSET ?
             """,(rs,n)->new Evidence(rs.getObject("id",UUID.class),rs.getObject("review_id",UUID.class),rs.getString("steam_recommendation_id"),rs.getString("source_text"),rs.getString("source_language"),rs.getTimestamp("created_at_steam").toInstant(),read(rs.getString("result"),Classification.class),rs.getDouble("similarity"),rs.getString("response_model"),rs.getString("prompt_version")),issue,game,size,(long)page*size);
+        item=new Summary(item.id(),item.title(),item.category(),workflow.get(game,issue).status(),item.metrics());
         return new Detail(snapshot,item,evidence,page,size,item.metrics().mentionCount());
     }
     private Summary summary(java.sql.ResultSet rs,int n)throws java.sql.SQLException {return new Summary(rs.getObject("id",UUID.class),rs.getString("title"),rs.getString("category"),"OPEN",read(rs.getString("metrics"),IssueEngine.Metrics.class));}

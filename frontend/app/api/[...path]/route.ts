@@ -1,7 +1,7 @@
 import { sameOrigin } from "@/lib/same-origin";
 import { NextRequest } from "next/server";
 
-const allowedPath = /^(?:auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/[0-9a-f-]{36}(?:\/overview|\/comparison|\/reports(?:\/(?:generate|[0-9a-f-]{36}))?|\/usage|\/updates(?:\/[0-9a-f-]{36})?|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}))?|\/analysis|\/reviews(?:\/export|\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
+const allowedPath = /^(?:auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/[0-9a-f-]{36}(?:\/overview|\/comparison|\/saved-views(?:\/[0-9a-f-]{36}\/remove)?|\/reports(?:\/(?:generate|[0-9a-f-]{36}))?|\/usage|\/updates(?:\/[0-9a-f-]{36})?|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}(?:\/(?:trend|workflow))?))?|\/analysis|\/reviews(?:\/export|\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const resource = path.join("/");

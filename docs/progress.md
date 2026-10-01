@@ -276,3 +276,9 @@ Added per-game in-app high-severity growth alerts, disabled by default. Hourly a
 ## Expiring report shares
 
 Added explicit owner-only sharing of one saved report, 1/7/30-day expiry, cryptographic 256-bit tokens stored only as hashes, token rotation and revocation. Anonymous read returns an allowlisted projection (game name/dates/brief/source excerpts), not workspace identifiers or access to other routes. Public views omit cookies, disable caching/indexing and referrer propagation. Per-instance public reads are bounded to 120/minute. Deleting the report/game cascades to the share. No real share created or publication performed. Static review only; runtime access/revocation checks remain part of later release verification.
+
+## Owner-controlled retention
+
+Added disabled-by-default per-game retention for old reviews, saved reports and read notifications, with preview and explicit owner confirmation in Processing. Daily deletion takes the existing import/analysis/grouping locks; review deletion clears grouping and cascades classifications, report deletion revokes shares by cascade. Usage accounting and unread notifications are preserved. Saved reports can retain older excerpts; later Steam imports may reintroduce old reviews. No retention policy was activated and no data was deleted. Reviewed lock ordering/cascades/defaults statically; runtime deletion acceptance is still outstanding.
+
+Retention migration also changes the cached-source reference to ON DELETE SET NULL, so retaining a copied classification cannot prevent removal of its older source. Frontend typecheck/lint passed; no runtime purge was executed.

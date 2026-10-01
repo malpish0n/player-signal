@@ -1,0 +1,17 @@
+'use client';
+import Link from 'next/link';
+import {useEffect,useRef,useState} from 'react';
+import {api,message} from '@/lib/api';
+import {Report,ReportSummary,parseReport,parseReports} from '@/lib/reports';
+import {ComparisonSignalsView} from '@/app/comparison-signals';
+import {ComparisonReportExport} from '../comparison/report-export';
+export function ReportsWorkspace({id,selected}:{id:string;selected?:string}){
+ const [items,setItems]=useState<ReportSummary[]|null>(null),[data,setData]=useState<Report|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);const requestId=useRef<string|null>(null);
+ useEffect(()=>{const c=new AbortController();const load=async()=>{try{const list=await api(`games/${id}/reports`,parseReports,{signal:c.signal});const report=selected?await api(`games/${id}/reports/${selected}`,parseReport,{signal:c.signal}):null;if(!c.signal.aborted){setItems(list);setData(report);setError('');}}catch(e){if(!c.signal.aborted)setError(message(e));}};void load();return()=>c.abort();},[id,selected,retry]);
+ async function generate(){setBusy(true);setError('');try{requestId.current??=crypto.randomUUID();const result=await api(`games/${id}/reports/generate`,parseReport,{method:'POST',body:JSON.stringify({type:'WEEKLY',requestId:requestId.current})});setData(result);setItems(v=>[result.report,...(v??[]).filter(i=>i.id!==result.report.id)]);requestId.current=null;}catch(e){setError(message(e));}finally{setBusy(false);}}
+ return <><div className="eyebrow">GAME WORKSPACE · SAVED SNAPSHOTS</div><h1>Reports</h1><p className="intro">Save the last seven complete UTC days against the preceding week. Reports retain their figures and source excerpts after later imports.</p><button disabled={busy||items===null||items.length>=100} onClick={()=>void generate()}>{busy?'Saving report…':'Create weekly report'}</button><p className="muted">Up to 100 snapshots per game. Summaries are calculated from evidence; no external AI request is made.</p>
+ {error&&<div className="error-banner" role="alert"><p>{error}</p><button onClick={()=>setRetry(v=>v+1)}>Reload reports</button></div>}
+ {items===null&&!error?<p role="status">Loading reports…</p>:items&&<section className="panel"><h2>Report history</h2>{items.length===0?<p>No reports yet. Analyze and group reviews, then create a report.</p>:<ul>{items.map(v=><li key={v.id}><Link href={`/games/${id}/reports?report=${v.id}`}>{v.type} · {v.periodStart} – {v.periodEnd}</Link> · {new Date(v.createdAt).toLocaleString(undefined,{timeZone:'UTC'})} UTC</li>)}</ul>}</section>}
+ {data&&<><section className="panel"><h2>{data.payload.comparison.game.name} · executive brief</h2><p>{data.payload.method}</p><p>Saved {data.report.createdAt} · {data.payload.comparison.imported} imported reviews at calculation time.</p><ul>{data.payload.summary.map((v,i)=><li key={i}>{v}</li>)}</ul><h3>Preserved source evidence</h3>{data.payload.evidence.map((v,i)=><div key={i}><strong>{v.title}</strong><blockquote>{v.sourceText}</blockquote><p className="muted">Steam review #{v.steamReviewId} · {v.model} · {v.promptVersion}</p></div>)}<p className="muted">Linked issue pages show the current grouping and may change. The excerpts above are part of this saved report.</p></section>{data.payload.comparison.signals&&<ComparisonSignalsView data={data.payload.comparison.signals} id={id} date={data.payload.comparison.date}/>}<ComparisonReportExport data={data.payload.comparison}/><button onClick={()=>window.print()}>Print / save PDF</button></>}
+ </>;
+}

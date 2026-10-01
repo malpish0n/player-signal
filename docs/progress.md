@@ -204,3 +204,10 @@ Later: complete F public beta; G paid SaaS.
 - Comparison responses now include zero-filled UTC daily review counts, current-version analysis coverage, category shares and per-issue mention shares/changes. Each side uses its own analyzed-review denominator; absent denominators remain null.
 - New/growing/declining/persistent labels refer to the current grouping, not proven fixes or causal effects. Missing/stale cluster snapshots are exposed. UI shows source links and exact count tables alongside the timeline; Markdown exports include issue changes and denominators.
 - Manually reviewed SQL identity/window predicates, same-game joins, parser alignment and empty/stale paths. No build or automated tests run; this code has not been deployed to the running image.
+
+## Persistent weekly and patch report snapshots
+
+- V9 stores bounded immutable JSON snapshots, exact representative review excerpts, provider metadata and deterministic evidence briefs. Weekly reports compare the last seven complete UTC days to the preceding week; PATCH creation is supported through the same API.
+- Workspace-scoped list/detail routes, UUID idempotency keys, 100-report cap and serializable creation transaction. Reused keys with different requests return 409; serialization conflicts can be retried with the original key. No external summary model is invoked.
+- Reports page provides history, retained evidence, comparison detail, Markdown comparison export and browser print/PDF styling. Reports are private; there is no public sharing bypass.
+- Manually checked request/response alignment, preservation of snapshots, same-game evidence joins, idempotency and transaction isolation. No automated checks/build or runtime verification under the owner's current constraint.

@@ -15,7 +15,7 @@ Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email account
 | Public landing and legal drafts | Implemented; owner/legal review and publication deferred |
 | Deployment, monitoring, backups | Pending configuration; hosting deferred by owner |
 | Billing | External integration deferred by owner |
-| Scheduled work and notifications | Pending; email delivery deferred by owner |
+| Scheduled work and notifications | Opt-in dispatcher/local analysis/weekly snapshots and in-app notices implemented; runtime verification and email/spike alerts pending |
 | Teams / operations / saved product preferences | Membership, manual invites, workspace jobs, workflow and saved views implemented; security runtime acceptance pending |
 | Data controls and sharing | Bounded export and explicit game/account deletion implemented; public share links and retention automation pending |
 

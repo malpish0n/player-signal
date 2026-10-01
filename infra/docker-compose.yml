@@ -18,7 +18,9 @@ services:
   backend:
     build: ../backend
     environment:
-      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      AUTH_ENABLED: ${SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      AUTH_ENABLED:-false}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       ANALYSIS_PROVIDER: ${ANALYSIS_PROVIDER:-local}
       ALLOW_PAID_AI: ${ALLOW_PAID_AI:-false}

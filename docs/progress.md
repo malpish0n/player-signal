@@ -238,3 +238,10 @@ Later: complete F public beta; G paid SaaS.
 - Added typed-confirmation game/account deletion, password reauthentication and rate limiting in account mode. Account deletion refuses owned workspaces with other members. Database transaction/advisory locks prevent deleting games while import/analysis/grouping holds its processing lock.
 - Current session is invalidated on account deletion; database-backed membership checks reject stale sessions. No user data was deleted or exported live during implementation.
 - Static review only, including FK ordering, workspace predicates, bounded buffering and worker locking. Restore/retention of backups is an operational concern; this is not a privacy-compliance certification.
+
+## Opt-in local automation and in-app notifications
+
+- V12 adds disabled-by-default per-game schedules and persistent notifications. An enabled dispatcher does no work until a game policy is explicitly saved as enabled.
+- Bounded imports can lead to one local analysis batch and grouping; existing per-game locks and workspace quotas remain active. OpenAI is excluded from scheduled analysis. Weekly report UUIDs deduplicate a week's snapshot; failures and report availability create in-app notifications, not email.
+- PostgreSQL dispatcher locking prevents two application instances dispatching together. Policy changes serialize with dispatch so disabling stops subsequent dispatch; already running jobs are not cancelled. Persisted phase/run IDs permit follow-up after restarts; a crash between starting a job and recording its ID can require reconciliation/retry, so exact-once dispatch is not claimed.
+- Manually reviewed dispatch gates, locks, quota errors, phases and notification deduplication. No schedules were enabled live, and no new jobs were executed. No builds/tests under the current owner instruction.

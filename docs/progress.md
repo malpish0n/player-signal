@@ -268,3 +268,7 @@ Verification: source/contract review and JSON syntax inspection only for backend
 ## Compose configuration correction
 
 Final static inspection found malformed nested substitutions for AUTH_ENABLED and ANALYSIS_MAX_REVIEWS in the local Compose template. Restored their independent defaults and clarified that a zero analysis quota blocks local attempts as well as remote attempts. Both local and production templates now pass `docker compose config --quiet` using the example environment and synthetic deployment names. This parses configuration only: no containers, network calls, migrations, builds or test suites were run. Shell scripts also passed `bash -n`.
+
+## Opt-in issue spike alerts
+
+Added per-game in-app high-severity growth alerts, disabled by default. Hourly and manual evaluation use complete UTC weeks, current classifications, minimum 20 analyzed reviews per window, 3 current mentions, +5pp share and severity >=75. Stale grouping and ignored/resolved issues are excluded; evidence title/day keys deduplicate notifications. No external delivery, schedule activation or live evaluation performed. Static inspection covers SQL scoping and threshold/denominator logic; frontend inspection follows.

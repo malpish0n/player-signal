@@ -22,13 +22,13 @@ public class ApiErrors {
     }
     @ExceptionHandler(Exception.class)
     ResponseEntity<ErrorBody> unexpected(Exception error) {
-        String requestId = UUID.randomUUID().toString();
+        String requestId = java.util.Objects.requireNonNullElseGet(org.slf4j.MDC.get("requestId"),()->UUID.randomUUID().toString());
         LoggerFactory.getLogger(ApiErrors.class).error("Request failed requestId={}", requestId, error);
         return ResponseEntity.internalServerError().body(new ErrorBody(
                 "INTERNAL_ERROR", "The request failed. Retry or inspect the server logs using the request ID.", requestId));
     }
     private ResponseEntity<ErrorBody> response(int status, String code, String message) {
-        String requestId = UUID.randomUUID().toString();
+        String requestId = java.util.Objects.requireNonNullElseGet(org.slf4j.MDC.get("requestId"),()->UUID.randomUUID().toString());
         LoggerFactory.getLogger(ApiErrors.class).warn("Request rejected requestId={} code={}", requestId, code);
         return ResponseEntity.status(status).body(new ErrorBody(code, message, requestId));
     }

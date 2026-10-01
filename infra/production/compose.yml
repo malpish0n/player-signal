@@ -1,0 +1,82 @@
+name: playersignal-production
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: playersignal
+      POSTGRES_USER: playersignal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong production database password}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  backend:
+    image: ${BACKEND_IMAGE:?Set a reviewed immutable backend image tag or digest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/playersignal
+      POSTGRES_USER: playersignal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Required}
+      AUTH_ENABLED: "true"
+      AUTH_COOKIE_SECURE: "true"
+      ANALYSIS_PROVIDER: local
+      ANALYSIS_MODEL: local-rules-v1
+      ALLOW_PAID_AI: "false"
+      ANALYSIS_MONTHLY_ATTEMPTS: ${ANALYSIS_MONTHLY_ATTEMPTS:-500}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-false}
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "5"}
+  frontend:
+    image: ${FRONTEND_IMAGE:?Set a reviewed immutable frontend image tag or digest}
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/welcome').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set the public hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+      - proxy_config:/config
+    depends_on:
+      frontend: {condition: service_healthy}
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+volumes:
+  database:
+  certificates:
+  proxy_config:

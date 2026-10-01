@@ -1,6 +1,6 @@
 # Remaining delivery scope
 
-Owner instruction (2026-10-01): proceed in coherent steps and commit each; do not run automated tests or builds. Record manual/static verification honestly. The running Docker images cannot verify new Java/Next production code until a later build is authorized. Prior passing checks do not validate new changes.
+Owner instruction (2026-10-01): proceed in coherent steps and commit each; do not run automated tests or builds. Static lint/type inspection is separate and produces no application build. Record manual/static verification honestly. The running Docker images cannot verify new Java/Next production code until a later build is authorized. Prior passing checks do not validate new changes.
 
 Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email accounts will be set up later. Prepare local functionality and deployment/integration boundaries; do not claim external integrations are live or publish anything.
 
@@ -13,7 +13,7 @@ Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email account
 | Saved weekly reports / evidence summaries | Deterministic snapshots implemented; static review only; AI executive synthesis not implemented |
 | Onboarding and UI completion | Preview/confirm/import and guided processing implemented; E2E/accessibility/performance acceptance not run |
 | Public landing and legal drafts | Implemented; owner/legal review and publication deferred |
-| Deployment, monitoring, backups | Pending configuration; hosting deferred by owner |
+| Deployment, monitoring, backups | Templates/scripts/runbook implemented; no deployment or restore drill; hosting deferred by owner |
 | Billing | External integration deferred by owner |
 | Scheduled work and notifications | Opt-in dispatcher/local analysis/weekly snapshots and in-app notices implemented; runtime verification and email/spike alerts pending |
 | Teams / operations / saved product preferences | Membership, manual invites, workspace jobs, workflow and saved views implemented; security runtime acceptance pending |

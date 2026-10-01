@@ -24,3 +24,5 @@ body{font-family:Arial,Helvetica,system-ui,sans-serif;font-size:14px;-webkit-fon
 .analysis-history{margin-top:16px}.analysis-history>button{font-size:12px}.analysis-history-content{margin-top:16px;padding:16px;background:var(--bg-app);border:1px solid var(--border);border-radius:6px}.history-entry{padding:16px 0;border-top:1px solid var(--border)}.history-entry summary{cursor:pointer}.history-hash{overflow-wrap:anywhere;font-size:11px}
 
 @media print{.app-header,.sidebar,button,form,.review-export{display:none!important}.app-body main{max-width:none;padding:0}body{background:white!important;color:#111!important}.panel{break-inside:avoid;border:1px solid #aaa;background:white!important;color:#111!important}.muted{color:#444!important}a{color:#111!important}.table-scroll{max-height:none;overflow:visible}th{position:static;background:#eee!important;color:#111!important}blockquote{white-space:pre-wrap}}
+
+input[type=checkbox]{width:auto;min-height:0;margin-right:8px}label:has(input[type=checkbox]){display:block;margin:12px 0}

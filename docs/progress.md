@@ -245,3 +245,10 @@ Later: complete F public beta; G paid SaaS.
 - Bounded imports can lead to one local analysis batch and grouping; existing per-game locks and workspace quotas remain active. OpenAI is excluded from scheduled analysis. Weekly report UUIDs deduplicate a week's snapshot; failures and report availability create in-app notifications, not email.
 - PostgreSQL dispatcher locking prevents two application instances dispatching together. Policy changes serialize with dispatch so disabling stops subsequent dispatch; already running jobs are not cancelled. Persisted phase/run IDs permit follow-up after restarts; a crash between starting a job and recording its ID can require reconciliation/retry, so exact-once dispatch is not claimed.
 - Manually reviewed dispatch gates, locks, quota errors, phases and notification deduplication. No schedules were enabled live, and no new jobs were executed. No builds/tests under the current owner instruction.
+
+## Deployment preparation and operational recovery
+
+- Added a separate production Compose/Caddy template requiring explicit images, domain and secrets; private database/backend networking, secure account cookies, no paid AI, health checks and bounded container logs.
+- Added private pg_dump backup and empty-target-only transactional restore scripts. They were not executed. Documented isolated restore rehearsal, credential handling, retention proposal and incident/runbook constraints.
+- Added server-generated request IDs and structured-log configuration for production. No request bodies, tokens or query strings are logged by the request timing filter.
+- Static frontend inspection found and fixed a missing JSX delimiter and two unescaped apostrophes. No automated tests/application builds or deployment occurred. Hosting, backup scheduling and monitoring-provider setup remain deferred.

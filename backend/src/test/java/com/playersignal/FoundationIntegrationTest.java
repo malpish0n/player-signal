@@ -34,7 +34,7 @@ class FoundationIntegrationTest {
                 .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
                 .defaultSchema(flyway.getConfiguration().getDefaultSchema()).load();
         assertThat(restarted.migrate().migrationsExecuted).isZero();
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM public.flyway_schema_history WHERE success", Integer.class)).isEqualTo(7);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM public.flyway_schema_history WHERE success", Integer.class)).isEqualTo(flyway.info().applied().length);
     }
 
     @Test void flywayCreatesSchemaAndRecordsSuccessfulMigration() {

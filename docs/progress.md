@@ -258,3 +258,9 @@ Later: complete F public beta; G paid SaaS.
 Added current-version category/status/issue filters shared by review pagination and bounded CSV export, preserved in saved URLs. Issue detail links to its matching review list. Obsolete input/model classifications cannot satisfy filters. PENDING means no current analysis; combining it with a category or issue deliberately returns no matches. Workspace ownership and write checks now use the same decoded application path.
 
 Verification: inspected parameterized SQL, correlated game ownership, pagination/export propagation and default compatibility. Frontend typecheck and lint passed for the final filter and drill-down changes. No automated tests/builds or new runtime execution.
+
+## Final contract and access review
+
+Workspace and role are read together and retained only for one HTTP request, preventing concurrent workspace switching from mixing an ownership check with a different role/workspace during that request. Each new request reloads membership. Deletion reauthentication uses the same 72 UTF-8 byte password bound as registration/login. OpenAPI now includes usage, current-classification filters, comparison signals, reports, workflow/trends, saved views, team administration, data controls, schedules and notifications. Administrative map responses remain extensible objects. Existing fixture identity is explicitly pinned in affected integration sources and migration count follows Flyway metadata; these tests were not run. Ollama instructions clarify that operators must disable cloud execution in the independently configured model server.
+
+Verification: source/contract review and JSON syntax inspection only for backend changes; no application build, migrations or tests executed.

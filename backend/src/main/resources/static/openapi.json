@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PlayerSignal local alpha",
-    "version": "0.6.1",
-    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404."
+    "version": "0.7.0",
+    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404. Local rules are the default analysis provider; paid OpenAI requires explicit opt-in. New source features require migrations V8–V12. This contract describes source, not the previously built runtime. Dynamic administrative maps use extensible object schemas."
   },
   "paths": {
     "/api/games": {
@@ -474,7 +474,7 @@
           {
             "name": "from",
             "in": "query",
-            "description": "Inclusive creation date, UTC midnight. Omitted means no lower bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "description": "Inclusive creation date, UTC midnight. Omitted means no lower bound. Use YYYY-MM-DD, years 0001–9999; reversed/invalid dates return 400.",
             "schema": {
               "type": "string",
               "format": "date"
@@ -483,10 +483,53 @@
           {
             "name": "to",
             "in": "query",
-            "description": "Inclusive creation date, through the entire UTC day. Omitted means no upper bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "description": "Inclusive creation date, through the entire UTC day. Omitted means no upper bound. Use YYYY-MM-DD, years 0001–9999; reversed/invalid dates return 400.",
             "schema": {
               "type": "string",
               "format": "date"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BUG",
+                "PERFORMANCE",
+                "GAMEPLAY",
+                "UI_UX",
+                "MULTIPLAYER",
+                "BALANCE",
+                "CONTENT",
+                "CONTROLS",
+                "AUDIO",
+                "LOCALIZATION",
+                "POSITIVE",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "RUNNING",
+                "SUCCEEDED",
+                "SKIPPED",
+                "FAILED"
+              ]
+            }
+          },
+          {
+            "name": "issueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -560,7 +603,8 @@
           {
             "SessionCookie": []
           }
-        ]
+        ],
+        "description": " Classification filters apply only to the current input hash/provider/model/prompt. PENDING means no current classification. Category and issue filters require SUCCEEDED."
       }
     },
     "/api/games/{id}/analysis": {
@@ -1251,7 +1295,7 @@
     "/api/games/{id}/reviews/export": {
       "get": {
         "summary": "Download all matching imported reviews as CSV",
-        "description": "Same language, votedUp and literal q filters as reviews. All pages; maximum 5000 rows and 10 MiB, otherwise 422 without a partial download. UTF-8 BOM, CRLF records, quoted fields, spreadsheet formula prefixes escaped with an apostrophe. No AI results, author IDs or raw payloads. Import coverage may be partial.",
+        "description": "Same language, votedUp and literal q filters as reviews. All pages; maximum 5000 rows and 10 MiB, otherwise 422 without a partial download. UTF-8 BOM, CRLF records, quoted fields, spreadsheet formula prefixes escaped with an apostrophe. No AI results, author IDs or raw payloads. Import coverage may be partial. Classification filters apply only to the current input hash/provider/model/prompt. PENDING means no current classification. Category and issue filters require SUCCEEDED.",
         "security": [
           {},
           {
@@ -1294,7 +1338,7 @@
           {
             "name": "from",
             "in": "query",
-            "description": "Inclusive creation date, UTC midnight. Omitted means no lower bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "description": "Inclusive creation date, UTC midnight. Omitted means no lower bound. Use YYYY-MM-DD, years 0001–9999; reversed/invalid dates return 400.",
             "schema": {
               "type": "string",
               "format": "date"
@@ -1303,10 +1347,53 @@
           {
             "name": "to",
             "in": "query",
-            "description": "Inclusive creation date, through the entire UTC day. Omitted means no upper bound. Use YYYY-MM-DD, years 0001\u20139999; reversed/invalid dates return 400.",
+            "description": "Inclusive creation date, through the entire UTC day. Omitted means no upper bound. Use YYYY-MM-DD, years 0001–9999; reversed/invalid dates return 400.",
             "schema": {
               "type": "string",
               "format": "date"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BUG",
+                "PERFORMANCE",
+                "GAMEPLAY",
+                "UI_UX",
+                "MULTIPLAYER",
+                "BALANCE",
+                "CONTENT",
+                "CONTROLS",
+                "AUDIO",
+                "LOCALIZATION",
+                "POSITIVE",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "RUNNING",
+                "SUCCEEDED",
+                "SKIPPED",
+                "FAILED"
+              ]
+            }
+          },
+          {
+            "name": "issueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1419,6 +1506,9 @@
                     "recommendationChangePoints": {
                       "type": "number",
                       "nullable": true
+                    },
+                    "signals": {
+                      "$ref": "#/components/schemas/ComparisonSignals"
                     }
                   }
                 }
@@ -1648,6 +1738,1604 @@
           },
           "422": {
             "description": "100-update limit reached"
+          }
+        }
+      }
+    },
+    "/api/games/preview": {
+      "post": {
+        "summary": "Preview Steam details without saving",
+        "description": "Counts against the workspace lookup rate limit. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "steamApp": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "steamApp"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/usage": {
+      "get": {
+        "summary": "Workspace usage for the selected game",
+        "description": "UTC month. Reserved, failed and retried attempts count; cached/skipped work does not. No invoice or monetary estimate.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/reports": {
+      "get": {
+        "summary": "List private immutable report snapshots",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportSummary"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/reports/{reportId}": {
+      "get": {
+        "summary": "Read private report snapshot",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/reports/generate": {
+      "post": {
+        "summary": "Create idempotent evidence report",
+        "description": "Up to 100 reports per game. Reuse requestId only with the same request. WEEKLY uses the last seven complete UTC days; PATCH requires date. The brief is deterministic, not an AI assessment. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{game}/issues/{issue}/workflow": {
+      "get": {
+        "summary": "Read or update manual issue workflow",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workflow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      },
+      "post": {
+        "summary": "Read or update manual issue workflow",
+        "description": " Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workflow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Workflow"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{game}/issues/{issue}/trend": {
+      "get": {
+        "summary": "Issue shares, daily mentions and heuristic priority",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                7,
+                30,
+                90
+              ],
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTrend"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/saved-views": {
+      "get": {
+        "summary": "List saved review and issue views",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedView"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      },
+      "post": {
+        "summary": "Save current game view",
+        "description": "Only relative review/issue paths of this game. Limit 20. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedViewInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/saved-views/{viewId}/remove": {
+      "post": {
+        "summary": "Remove saved view",
+        "description": " Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/automation": {
+      "get": {
+        "summary": "Read opt-in game schedule",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      },
+      "post": {
+        "summary": "Configure game schedule",
+        "description": "Disabled by default. Automatic analysis permits only local rules or Ollama. Disabling stops future dispatch, not already running jobs. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/notifications": {
+      "get": {
+        "summary": "Read latest 100 in-app notifications",
+        "description": "",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Notification"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/notifications/read": {
+      "post": {
+        "summary": "Mark game notifications read",
+        "description": " Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/workspace": {
+      "get": {
+        "summary": "Read active workspace, role, memberships and pending invitations",
+        "description": "Invitation metadata is visible only to the owner. No invitation tokens are returned.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/workspace/switch": {
+      "post": {
+        "summary": "Switch active workspace",
+        "description": "Existing members only. Affects subsequent requests in all account sessions. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "workspaceId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "workspaceId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/invites": {
+      "post": {
+        "summary": "Create seven-day manual team invitation",
+        "description": "OWNER only; account mode required. Token returned once; only its hash is stored. No email is sent. Ten active invitations maximum. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/invites/accept": {
+      "post": {
+        "summary": "Accept invitation for signed-in email",
+        "description": "Account mode; email must match invitation. Limit 50 members. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 43
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/invites/{inviteId}/revoke": {
+      "post": {
+        "summary": "Revoke pending invitation",
+        "description": "OWNER only. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inviteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/workspace/members/{userId}/role": {
+      "post": {
+        "summary": "Change non-owner member role",
+        "description": "OWNER only. MEMBER is read-only; owner cannot be demoted. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "MEMBER"
+                    ]
+                  }
+                },
+                "required": [
+                  "role"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/members/{userId}/remove": {
+      "post": {
+        "summary": "Remove non-owner member",
+        "description": "OWNER only. Their active workspace falls back to their own workspace. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/workspace/operations": {
+      "get": {
+        "summary": "Inspect recent workspace import and analysis jobs",
+        "description": "OWNER or ADMIN. At most 50 jobs per type.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/workspace/export": {
+      "get": {
+        "summary": "Download bounded workspace content JSON",
+        "description": "OWNER only. Max 5000 reviews / 10 MiB with size preflight. Excludes secrets, raw reviewer payloads, classification history and operational logs.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/games/{id}/delete": {
+      "post": {
+        "summary": "Permanently delete game data",
+        "description": "OWNER only. confirmation must equal DELETE followed by a space and this game UUID. Current password required in account mode. Active processing blocks deletion. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace/account/delete": {
+      "post": {
+        "summary": "Permanently delete own account and owned workspaces",
+        "description": "Account mode. Requires DELETE MY ACCOUNT and current password. Remove other members from owned workspaces first. Active processing blocks deletion; session is invalidated. Mutations require X-CSRF-TOKEN in account mode. Game mutations require OWNER or ADMIN unless owner-only is stated.",
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          },
+          "403": {
+            "description": "Role, CSRF or password check denied"
+          },
+          "404": {
+            "description": "Resource absent or outside the active workspace"
+          },
+          "409": {
+            "description": "Conflicting operation or disabled account feature"
+          },
+          "422": {
+            "description": "Configured capacity or export limit exceeded"
+          },
+          "429": {
+            "description": "Rate or usage limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteInput"
+              }
+            }
           }
         }
       }
@@ -2774,6 +4462,659 @@
             "format": "date-time"
           }
         }
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "analysisAttempts": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthlyLimit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "inputTokens": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outputTokens": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unknownAttempts": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "month",
+          "analysisAttempts",
+          "monthlyLimit",
+          "inputTokens",
+          "outputTokens",
+          "unknownAttempts"
+        ]
+      },
+      "SignalChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "before": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "after": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "beforeShare": {
+            "type": "number",
+            "nullable": true
+          },
+          "afterShare": {
+            "type": "number",
+            "nullable": true
+          },
+          "changePoints": {
+            "type": "number",
+            "nullable": true
+          },
+          "movement": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "GROWING",
+              "DECLINING",
+              "PERSISTENT",
+              "INSUFFICIENT_DATA"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "category",
+          "before",
+          "after",
+          "beforeShare",
+          "afterShare",
+          "changePoints",
+          "movement"
+        ]
+      },
+      "SignalDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "reviews": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recommended": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "date",
+          "reviews",
+          "recommended"
+        ]
+      },
+      "ComparisonSignals": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "analyzedBefore": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "analyzedAfter": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/IssueSnapshot"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SignalChange"
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SignalChange"
+            }
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SignalDay"
+            }
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "analyzedBefore",
+          "analyzedAfter",
+          "snapshot",
+          "categories",
+          "issues",
+          "daily"
+        ]
+      },
+      "Comparison": {
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "imported": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "before": {
+            "$ref": "#/components/schemas/ComparisonWindow"
+          },
+          "after": {
+            "$ref": "#/components/schemas/ComparisonWindow"
+          },
+          "reviewChangePercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "recommendationChangePoints": {
+            "type": "number",
+            "nullable": true
+          },
+          "signals": {
+            "$ref": "#/components/schemas/ComparisonSignals"
+          }
+        }
+      },
+      "ReportSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "PATCH"
+            ]
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "periodStart",
+          "periodEnd",
+          "createdAt"
+        ]
+      },
+      "ReportExcerpt": {
+        "type": "object",
+        "properties": {
+          "issueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sourceText": {
+            "type": "string"
+          },
+          "steamReviewId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "issueId",
+          "title",
+          "sourceText",
+          "steamReviewId",
+          "model",
+          "promptVersion"
+        ]
+      },
+      "ReportPayload": {
+        "type": "object",
+        "properties": {
+          "comparison": {
+            "$ref": "#/components/schemas/Comparison"
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportExcerpt"
+            }
+          },
+          "method": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "comparison",
+          "summary",
+          "evidence",
+          "method"
+        ]
+      },
+      "ReportView": {
+        "type": "object",
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/ReportSummary"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ReportPayload"
+          }
+        },
+        "required": [
+          "report",
+          "payload"
+        ]
+      },
+      "ReportInput": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "PATCH"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "days": {
+            "type": "integer",
+            "enum": [
+              7,
+              30,
+              90
+            ],
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "requestId"
+        ]
+      },
+      "Workflow": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "WATCHING",
+              "IMPROVING",
+              "RESOLVED",
+              "IGNORED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "IssueTrend": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "analyzedBefore": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "analyzedAfter": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "change": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SignalChange"
+              }
+            ],
+            "nullable": true
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "mentions": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/IssueSnapshot"
+          },
+          "priorityScore": {
+            "type": "number"
+          },
+          "components": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "days",
+          "analyzedBefore",
+          "analyzedAfter",
+          "change",
+          "daily",
+          "snapshot",
+          "priorityScore",
+          "components"
+        ]
+      },
+      "SavedViewInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "name",
+          "path"
+        ]
+      },
+      "SavedView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "path"
+        ]
+      },
+      "AutomationInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "intervalHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 168
+          },
+          "analyzeLocal": {
+            "type": "boolean"
+          },
+          "weeklyReport": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "intervalHours",
+          "analyzeLocal",
+          "weeklyReport"
+        ]
+      },
+      "AutomationPolicy": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "intervalHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 168
+          },
+          "analyzeLocal": {
+            "type": "boolean"
+          },
+          "weeklyReport": {
+            "type": "boolean"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "IDLE",
+              "FETCHING",
+              "ANALYZING",
+              "GROUPING"
+            ]
+          },
+          "nextSyncAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "workerEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gameId",
+          "enabled",
+          "intervalHours",
+          "analyzeLocal",
+          "weeklyReport",
+          "phase",
+          "nextSyncAt",
+          "lastError",
+          "workerEnabled"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "read_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "message",
+          "created_at",
+          "read_at"
+        ]
+      },
+      "DeleteInput": {
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation"
+        ]
+      },
+      "InviteInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MEMBER"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
+      "InviteCreated": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "expiresAt"
+        ]
+      },
+      "GamePreview": {
+        "type": "object",
+        "properties": {
+          "steamAppId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "headerImageUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "steamAppId",
+          "name",
+          "headerImageUrl"
+        ]
       }
     },
     "securitySchemes": {

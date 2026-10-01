@@ -29,7 +29,7 @@ public class DataControlService {
   try{if(mapper.writeValueAsBytes(out).length>10*1024*1024)throw new ApiException(422,"EXPORT_LIMIT","Workspace export exceeds 10 MiB. Use filtered exports.");}catch(com.fasterxml.jackson.core.JsonProcessingException e){throw new IllegalStateException("Export serialization failed",e);}return out;
  }
  private void verify(DeleteInput input,String expected){if(input.confirmation()==null||!input.confirmation().equals(expected))throw new ApiException(400,"CONFIRMATION_REQUIRED","Enter the exact deletion confirmation.");if(workspace.enabled()){
-  String hash=jdbc.queryForObject("SELECT password_hash FROM playersignal.app_user WHERE id=?",String.class,workspace.user());if(input.password()==null||input.password().length()>72||!passwords.matches(input.password(),hash))throw new ApiException(403,"REAUTH_REQUIRED","Confirm your current account password.");}}
+  String hash=jdbc.queryForObject("SELECT password_hash FROM playersignal.app_user WHERE id=?",String.class,workspace.user());if(input.password()==null||input.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72||!passwords.matches(input.password(),hash))throw new ApiException(403,"REAUTH_REQUIRED","Confirm your current account password.");}}
  private void lockGame(UUID id){
   long app=jdbc.queryForObject("SELECT steam_app_id FROM playersignal.game WHERE id=? FOR UPDATE",Long.class,id);
   for(long key:new long[]{app,-app,Long.MIN_VALUE+app})if(!Boolean.TRUE.equals(jdbc.queryForObject("SELECT pg_try_advisory_xact_lock(?)",Boolean.class,key)))throw new ApiException(409,"GAME_BUSY","Wait for this game's processing to finish before deleting it.");

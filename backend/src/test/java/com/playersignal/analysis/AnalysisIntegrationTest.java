@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
 
 @Testcontainers
-@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT, properties={"spring.datasource.password=test", "playersignal.analysis.max-reviews=3", "playersignal.analysis.retry-delay-ms=0"})
+@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT, properties={"playersignal.analysis.provider=openai", "playersignal.analysis.model=gpt-4o-mini-2024-07-18", "spring.datasource.password=test", "playersignal.analysis.max-reviews=3", "playersignal.analysis.retry-delay-ms=0"})
 class AnalysisIntegrationTest {
     @Container @ServiceConnection static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
     @MockitoBean ReviewAnalyzer analyzer;

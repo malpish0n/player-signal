@@ -14,7 +14,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.*;
 import static org.assertj.core.api.Assertions.*;
 @Testcontainers
-@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT, properties={"playersignal.analysis.provider=openai","playersignal.analysis.model=gpt-4o-mini-2024-07-18"})
 class IssueIntegrationTest {
     @Container @ServiceConnection static PostgreSQLContainer<?> postgres=new PostgreSQLContainer<>("postgres:17-alpine");
     @Autowired JdbcTemplate jdbc;@Autowired IssueService service;@Autowired GameRepository games;@Autowired AnalysisRepository analyses;@Autowired ObjectMapper mapper;@Autowired TestRestTemplate http;

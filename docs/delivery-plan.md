@@ -9,7 +9,7 @@ Owner constraint: no paid OpenAI calls. Hosting/domain, Stripe and email account
 | Durable analysis quota / usage counters | Implemented; static review only |
 | Free local analysis and optional local model | Implemented adapters; static review only; local model installation/quality evaluation pending |
 | Issue analytics, scoring and exploration | Pending |
-| Full patch comparison | Pending |
+| Full patch comparison | Category/issue shares and timeline implemented; static review only |
 | Saved weekly reports / evidence summaries | Pending |
 | Onboarding and UI completion | Pending |
 | Public landing and legal drafts | Pending |

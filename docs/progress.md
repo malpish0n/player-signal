@@ -198,3 +198,9 @@ Later: complete F public beta; G paid SaaS.
 - Added optional local Ollama chat/JSON-schema adapter using the existing strict evidence validator. Local origin allowlist, no redirects, no cloud-model names and no cloud fallback. OpenAI now requires an additional ALLOW_PAID_AI opt-in, default false.
 - Current provider/model participates in cache, history and issue eligibility; old analysis versions remain intact. Defaults/documentation favor local rules. Existing .env overrides are preserved.
 - Reviewed code paths and official Ollama contracts manually. No tests/builds, model downloads, provider calls or deployment performed. Local model installation and quality evaluation are still pending; this is not a claim of semantic-analysis equivalence.
+
+## Patch analysis signals and timeline
+
+- Comparison responses now include zero-filled UTC daily review counts, current-version analysis coverage, category shares and per-issue mention shares/changes. Each side uses its own analyzed-review denominator; absent denominators remain null.
+- New/growing/declining/persistent labels refer to the current grouping, not proven fixes or causal effects. Missing/stale cluster snapshots are exposed. UI shows source links and exact count tables alongside the timeline; Markdown exports include issue changes and denominators.
+- Manually reviewed SQL identity/window predicates, same-game joins, parser alignment and empty/stale paths. No build or automated tests run; this code has not been deployed to the running image.

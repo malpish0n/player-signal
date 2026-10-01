@@ -14,9 +14,10 @@ import org.springframework.transaction.annotation.*;
 public class ComparisonService {
     public record Window(LocalDate from,LocalDate to,long reviews,long recommended,Double recommendationRate) {}
     public record Comparison(GameRepository.Game game,LocalDate date,int days,Instant calculatedAt,long imported,
-        Window before,Window after,Double reviewChangePercent,Double recommendationChangePoints) {}
+        Window before,Window after,Double reviewChangePercent,Double recommendationChangePoints,ComparisonSignals.Signals signals) {}
+    private final ComparisonSignals signals;
     private final JdbcTemplate jdbc;private final GameRepository games;
-    public ComparisonService(JdbcTemplate jdbc,GameRepository games){this.jdbc=jdbc;this.games=games;}
+    public ComparisonService(JdbcTemplate jdbc,GameRepository games,ComparisonSignals signals){this.jdbc=jdbc;this.games=games;this.signals=signals;}
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
     public Comparison get(UUID game,String date,int days,Instant now){
         var selected=games.get(game);OverviewService.validateDays(days);
@@ -35,6 +36,6 @@ public class ComparisonService {
         var metrics=OverviewService.metrics(counts[2],counts[3],counts[0],counts[1]);
         return new Comparison(selected,pivot,days,now,imported,
             new Window(start,pivot.minusDays(1),counts[0],counts[1],metrics.previousPositiveRatio()),
-            new Window(pivot,end.minusDays(1),counts[2],counts[3],metrics.positiveRatio()),metrics.reviewChangePercent(),metrics.positiveChangePoints());
+            new Window(pivot,end.minusDays(1),counts[2],counts[3],metrics.positiveRatio()),metrics.reviewChangePercent(),metrics.positiveChangePoints(),signals.get(game,start,pivot,end));
     }
 }

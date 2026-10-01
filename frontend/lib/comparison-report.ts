@@ -24,6 +24,7 @@ Imported reviews stored: ${data.imported}
 Review volume change: ${change(data.reviewChangePercent,'%')}
 Recommendation rate change: ${change(data.recommendationChangePoints,' percentage points')}
 
+${data.signals ? signalReport(data) : ""}
 ## Source evidence
 
 - [Before period](<${base}${comparisonReviews(data.game.id,data.before)}>)
@@ -37,4 +38,10 @@ Only imported reviews are included. Missing imports and small samples can distor
 
 Recommendations are Steam votes, not AI sentiment. Changes compare after with before. A missing baseline is not zero change. This report does not prove that an update caused a change and does not contain an AI-generated assessment.
 `;
+}
+
+function signalReport(data:Comparison):string {
+ const s=data.signals!;
+ const rows=s.issues.map(v=>`| ${plain(v.title)} | ${v.before} | ${v.after} | ${v.changePoints===null?'Unknown':v.changePoints.toFixed(2)} | ${v.movement} |`).join('\n');
+ return `## Analysis signals\n\nProvider: ${plain(s.provider)} / ${plain(s.model)}\nAnalyzed review denominators: ${s.analyzedBefore} before / ${s.analyzedAfter} after.\nGrouping stale or missing: ${s.snapshot.stale ? 'yes' : 'no'}.\n\n| Issue | Before mentions | After mentions | Share change (pp) | Movement |\n| --- | --- | --- | --- | --- |\n${rows}\n\nShares use current successful analyses. NEW refers to the current grouping, and DECLINING does not prove a fix.\n`;
 }

@@ -1,0 +1,2265 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PlayerSignal local alpha",
+    "version": "0.6.0",
+    "description": "Accounts are opt-in via AUTH_ENABLED. When enabled, game resources require a session and every mutation requires X-CSRF-TOKEN from /api/auth/session. Cross-workspace resources return 404."
+  },
+  "paths": {
+    "/api/games": {
+      "get": {
+        "summary": "List connected games",
+        "responses": {
+          "200": {
+            "description": "Games",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Resolve App ID or HTTPS Steam store URL and upsert game",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "steamApp"
+                ],
+                "properties": {
+                  "steamApp": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Game"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import already running or capacity exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Steam unavailable or invalid response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Import could not start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when accounts are enabled.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/games/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Get connected game",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Game"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import already running or capacity exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Steam unavailable or invalid response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Import could not start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/games/{id}/sync": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Start bounded background import; resume previous incomplete run",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import already running or capacity exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Steam unavailable or invalid response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Import could not start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when accounts are enabled.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/games/{id}/sync/latest": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Latest import audit",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No import has run yet"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import already running or capacity exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Steam unavailable or invalid response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Import could not start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/games/{id}/reviews": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Browse persisted source reviews",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z]{2,32}$"
+            }
+          },
+          {
+            "name": "votedUp",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "description": "Literal case-insensitive substring of original review text"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import already running or capacity exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Steam unavailable or invalid response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Import could not start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/games/{id}/analysis": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Current analysis configuration, counts and latest run",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Start a bounded analysis batch",
+        "parameters": [
+          {
+            "name": "retryFailed",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when accounts are enabled.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisRun"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Analysis worker or game busy"
+          },
+          "503": {
+            "description": "Provider unconfigured or unavailable"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/games/{id}/reviews/{reviewId}/analyses": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "reviewId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "All analysis versions with exact input snapshots",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisHistory"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Review not found in this game"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/analysis/demo": {
+      "get": {
+        "summary": "Synthetic deterministic examples; no persistence or model calls",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisDemo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{game}/issues": {
+      "parameters": [
+        {
+          "name": "game",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Issue snapshot ordered by mean severity then mention count",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "minSeverity",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/games/{game}/issues/rebuild": {
+      "parameters": [
+        {
+          "name": "game",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Atomically replace clusters from current actionable analyses; local lexical vectors",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuePage"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rebuild already running"
+          },
+          "422": {
+            "description": "More than 2000 eligible analyses; previous snapshot preserved"
+          },
+          "503": {
+            "description": "Rebuild failed; previous snapshot preserved"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when accounts are enabled.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/games/{game}/issues/{issue}": {
+      "parameters": [
+        {
+          "name": "game",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "issue",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Issue metrics and paginated exact source evidence",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Issue not found in selected game"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/issues/demo": {
+      "get": {
+        "summary": "Fixed six-review synthetic corpus; no writes or external calls",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueDemo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}/overview": {
+      "get": {
+        "summary": "Live overview with equal-duration comparison windows and UTC daily buckets",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                7,
+                30,
+                90
+              ],
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overview snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported range"
+          },
+          "401": {
+            "description": "Authentication required when accounts are enabled"
+          }
+        },
+        "security": [
+          {},
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/overview/demo": {
+      "get": {
+        "summary": "Ten-review fixed synthetic dashboard; read-only and no live calls",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                7,
+                30,
+                90
+              ],
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overview snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported range"
+          }
+        }
+      }
+    },
+    "/api/auth/session": {
+      "get": {
+        "summary": "Session account session",
+        "responses": {
+          "200": {
+            "description": "Session state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register account session",
+        "responses": {
+          "200": {
+            "description": "Session state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "Invalid CSRF token"
+          },
+          "409": {
+            "description": "Local mode or unavailable account"
+          },
+          "429": {
+            "description": "Authentication throttled"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when AUTH_ENABLED=true; obtain from GET /api/auth/session.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "workspaceName"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "writeOnly": true
+                  },
+                  "workspaceName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login account session",
+        "responses": {
+          "200": {
+            "description": "Session state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "Invalid CSRF token"
+          },
+          "409": {
+            "description": "Local mode or unavailable account"
+          },
+          "429": {
+            "description": "Authentication throttled"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when AUTH_ENABLED=true; obtain from GET /api/auth/session.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Logout account session",
+        "responses": {
+          "200": {
+            "description": "Session state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "Invalid CSRF token"
+          },
+          "409": {
+            "description": "Local mode or unavailable account"
+          },
+          "429": {
+            "description": "Authentication throttled"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Required when AUTH_ENABLED=true; obtain from GET /api/auth/session.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Game": {
+        "type": "object",
+        "required": [
+          "id",
+          "steamAppId",
+          "name",
+          "headerImageUrl",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "steamAppId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "headerImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Run": {
+        "type": "object",
+        "required": [
+          "id",
+          "gameId",
+          "status",
+          "startedAt",
+          "finishedAt",
+          "fetched",
+          "inserted",
+          "updated",
+          "nextCursor",
+          "error"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RUNNING",
+              "COMPLETED",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fetched": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inserted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "updated": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "required": [
+          "id",
+          "steamRecommendationId",
+          "language",
+          "reviewText",
+          "votedUp",
+          "votesUp",
+          "playtimeMinutes",
+          "createdAtSteam",
+          "updatedAtSteam"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "steamRecommendationId": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "reviewText": {
+            "type": "string"
+          },
+          "votedUp": {
+            "type": "boolean"
+          },
+          "votesUp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "playtimeMinutes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAtSteam": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAtSteam": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "analysis": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Analysis"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "requestId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Classification": {
+        "type": "object",
+        "properties": {
+          "sentiment": {
+            "type": "string",
+            "enum": [
+              "VERY_NEGATIVE",
+              "NEGATIVE",
+              "MIXED",
+              "POSITIVE",
+              "VERY_POSITIVE"
+            ]
+          },
+          "primaryCategory": {
+            "type": "string",
+            "enum": [
+              "BUG",
+              "PERFORMANCE",
+              "GAMEPLAY",
+              "UI_UX",
+              "MULTIPLAYER",
+              "BALANCE",
+              "CONTENT",
+              "CONTROLS",
+              "AUDIO",
+              "LOCALIZATION",
+              "POSITIVE",
+              "OTHER"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "normalizedIssue": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "isActionable": {
+            "type": "boolean"
+          },
+          "isLikelyBug": {
+            "type": "boolean"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "maxItems": 5
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "sentiment",
+          "primaryCategory",
+          "severity",
+          "confidence",
+          "normalizedIssue",
+          "isActionable",
+          "isLikelyBug",
+          "evidence",
+          "tags"
+        ],
+        "additionalProperties": false
+      },
+      "Analysis": {
+        "type": "object",
+        "required": [
+          "id",
+          "provider",
+          "model",
+          "promptVersion",
+          "updatedAt",
+          "responseModel",
+          "error",
+          "skipReason",
+          "cachedFrom",
+          "status",
+          "attempts",
+          "result"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "responseModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "skipReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "cachedFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RUNNING",
+              "SUCCEEDED",
+              "FAILED",
+              "SKIPPED"
+            ]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "result": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Classification"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "AnalysisRun": {
+        "type": "object",
+        "required": [
+          "id",
+          "gameId",
+          "provider",
+          "model",
+          "promptVersion",
+          "startedAt",
+          "status",
+          "processed",
+          "succeeded",
+          "skipped",
+          "failed",
+          "cached",
+          "finishedAt",
+          "error"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "gameId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RUNNING",
+              "COMPLETED",
+              "PARTIAL",
+              "COMPLETED_WITH_ERRORS",
+              "FAILED"
+            ]
+          },
+          "processed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "succeeded": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cached": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "finishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AnalysisStatus": {
+        "type": "object",
+        "required": [
+          "available",
+          "provider",
+          "model",
+          "promptVersion",
+          "maxReviewsPerRun",
+          "counts",
+          "latestRun"
+        ],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "maxReviewsPerRun": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "counts": {
+            "type": "object",
+            "required": [
+              "total",
+              "pending",
+              "running",
+              "succeeded",
+              "skipped",
+              "failed"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pending": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "running": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "succeeded": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "latestRun": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisRun"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "AnalysisHistory": {
+        "type": "object",
+        "required": [
+          "analysis",
+          "inputHash",
+          "sourceText",
+          "sourceLanguage"
+        ],
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/Analysis"
+          },
+          "inputHash": {
+            "type": "string"
+          },
+          "sourceText": {
+            "type": "string"
+          },
+          "sourceLanguage": {
+            "type": "string"
+          }
+        }
+      },
+      "AnalysisDemo": {
+        "type": "object",
+        "required": [
+          "mode",
+          "description",
+          "reviews"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "SYNTHETIC_DEMO"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "sourceId",
+                "sourceText",
+                "language",
+                "model",
+                "skippedReason",
+                "result"
+              ],
+              "properties": {
+                "sourceId": {
+                  "type": "string"
+                },
+                "sourceText": {
+                  "type": "string"
+                },
+                "language": {
+                  "type": "string"
+                },
+                "model": {
+                  "type": "string"
+                },
+                "skippedReason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "result": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Classification"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "IssueMetrics": {
+        "type": "object",
+        "required": [
+          "mentionCount",
+          "recentMentions",
+          "previousMentions",
+          "firstSeenAt",
+          "lastSeenAt",
+          "negativeRatio",
+          "severityScore",
+          "confidence",
+          "velocityPercent"
+        ],
+        "properties": {
+          "mentionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "recentMentions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "previousMentions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "negativeRatio": {
+            "type": "number"
+          },
+          "severityScore": {
+            "type": "number"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "velocityPercent": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "category",
+          "status",
+          "metrics"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/IssueMetrics"
+          }
+        }
+      },
+      "IssueSnapshot": {
+        "type": "object",
+        "required": [
+          "builtAt",
+          "algorithm",
+          "threshold",
+          "clusteredReviews",
+          "eligibleReviews",
+          "stale"
+        ],
+        "properties": {
+          "builtAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "algorithm": {
+            "type": "string"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "clusteredReviews": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eligibleReviews": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "stale": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IssueEvidence": {
+        "type": "object",
+        "required": [
+          "analysisId",
+          "reviewId",
+          "steamRecommendationId",
+          "sourceText",
+          "language",
+          "seenAt",
+          "model",
+          "promptVersion",
+          "classification",
+          "similarity"
+        ],
+        "properties": {
+          "analysisId": {
+            "type": "string"
+          },
+          "reviewId": {
+            "type": "string"
+          },
+          "steamRecommendationId": {
+            "type": "string"
+          },
+          "sourceText": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "seenAt": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/Classification"
+          },
+          "similarity": {
+            "type": "number"
+          }
+        }
+      },
+      "IssuePage": {
+        "type": "object",
+        "required": [
+          "snapshot",
+          "items",
+          "page",
+          "size",
+          "total"
+        ],
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/IssueSnapshot"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "IssueDetail": {
+        "type": "object",
+        "required": [
+          "snapshot",
+          "issue",
+          "evidence",
+          "page",
+          "size",
+          "total"
+        ],
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/IssueSnapshot"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/Issue"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueEvidence"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "IssueDemo": {
+        "type": "object",
+        "required": [
+          "mode",
+          "asOf",
+          "algorithm",
+          "issues"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "SYNTHETIC_DEMO"
+            ]
+          },
+          "asOf": {
+            "type": "string"
+          },
+          "algorithm": {
+            "type": "string"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "issue",
+                "evidence"
+              ],
+              "properties": {
+                "issue": {
+                  "$ref": "#/components/schemas/Issue"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueEvidence"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OverviewMetrics": {
+        "type": "object",
+        "required": [
+          "reviews",
+          "recommended",
+          "previousReviews",
+          "positiveRatio",
+          "previousPositiveRatio",
+          "reviewChangePercent",
+          "positiveChangePoints"
+        ],
+        "properties": {
+          "reviews": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "recommended": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "previousReviews": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "positiveRatio": {
+            "type": "number",
+            "nullable": true
+          },
+          "previousPositiveRatio": {
+            "type": "number",
+            "nullable": true
+          },
+          "reviewChangePercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "positiveChangePoints": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "OverviewDay": {
+        "type": "object",
+        "required": [
+          "date",
+          "recommended",
+          "notRecommended"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "recommended": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "notRecommended": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "OverviewCategory": {
+        "type": "object",
+        "required": [
+          "category",
+          "count"
+        ],
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Overview": {
+        "type": "object",
+        "required": [
+          "mode",
+          "game",
+          "days",
+          "periodStart",
+          "asOf",
+          "imported",
+          "metrics",
+          "daily",
+          "categories",
+          "analysis",
+          "ingestion",
+          "issues",
+          "highSeverityIssues"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "LIVE",
+              "SYNTHETIC_DEMO"
+            ]
+          },
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "days": {
+            "type": "integer",
+            "enum": [
+              7,
+              30,
+              90
+            ]
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string"
+          },
+          "imported": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/OverviewMetrics"
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewDay"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewCategory"
+            }
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/AnalysisStatus"
+          },
+          "ingestion": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Run"
+              }
+            ],
+            "nullable": true
+          },
+          "issues": {
+            "$ref": "#/components/schemas/IssuePage"
+          },
+          "highSeverityIssues": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AccountSession": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "user",
+          "csrfToken"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "csrfToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "user": {
+            "type": "object",
+            "nullable": true,
+            "required": [
+              "id",
+              "email",
+              "workspaceId",
+              "workspaceName"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "workspaceId": {
+                "type": "string"
+              },
+              "workspaceName": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "PLAYERSIGNAL_SESSION"
+      }
+    }
+  }
+}

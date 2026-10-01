@@ -1,0 +1,41 @@
+import { sameOrigin } from "@/lib/same-origin";
+import { NextRequest } from "next/server";
+
+const allowedPath = /^(?:auth\/(?:session|login|register|logout)|(?:analysis|issues|overview)\/demo|games(?:\/[0-9a-f-]{36}(?:\/overview|\/issues(?:\/(?:rebuild|[0-9a-f-]{36}))?|\/analysis|\/reviews(?:\/[0-9a-f-]{36}\/analyses)?|\/sync(?:\/latest)?)?)?)$/;
+async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  const { path } = await context.params;
+  const resource = path.join("/");
+  if (!allowedPath.test(resource)) return Response.json({ message: "Unknown API route." }, { status: 404 });
+  if (request.method === "POST" && !sameOrigin(request.headers.get("origin"), request.headers.get("host"))) {
+    return Response.json({ message: "Cross-origin writes are not allowed." }, { status: 403 });
+  }
+  try {
+    const body = request.method === "POST" ? await request.text() : undefined;
+    if (body && body.length > 4096) return Response.json({ message: "Request is too large." }, { status: 413 });
+    const backend = process.env.BACKEND_URL ?? "http://localhost:8080";
+    const upstreamHeaders = new Headers({ "Content-Type": "application/json" });
+    const session = request.cookies.get("PLAYERSIGNAL_SESSION");
+    if (session) upstreamHeaders.set("Cookie", `PLAYERSIGNAL_SESSION=${session.value}`);
+    const csrf = request.headers.get("X-CSRF-TOKEN");
+    if (csrf) upstreamHeaders.set("X-CSRF-TOKEN", csrf);
+    const response = await fetch(`${backend}/api/${resource}${request.nextUrl.search}`, {
+      method: request.method,
+      headers: upstreamHeaders,
+      body: body || undefined,
+      cache: "no-store",
+      signal: AbortSignal.timeout(55000),
+    });
+    const responseHeaders = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store" });
+    for (const cookie of response.headers.getSetCookie()) {
+      if (cookie.startsWith("PLAYERSIGNAL_SESSION=")) responseHeaders.append("Set-Cookie", cookie);
+    }
+    return new Response(response.status === 204 ? null : await response.text(), {
+      status: response.status,
+      headers: responseHeaders,
+    });
+  } catch {
+    return Response.json({ message: "Backend unavailable. Previously imported reviews are preserved. Retry shortly." }, { status: 502 });
+  }
+}
+export const GET = forward;
+export const POST = forward;

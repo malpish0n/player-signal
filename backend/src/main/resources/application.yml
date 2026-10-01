@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: playersignal
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/playersignal}
+    username: ${POSTGRES_USER:playersignal}
+    password: ${POSTGRES_PASSWORD}
+  flyway:
+    default-schema: public
+    enabled: true
+    clean-disabled: true
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: PLAYERSIGNAL_SESSION
+        http-only: true
+        same-site: lax
+        secure: ${AUTH_COOKIE_SECURE:false}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+playersignal:
+  auth:
+    enabled: ${AUTH_ENABLED:false}
+  ingestion:
+    max-pages: ${STEAM_MAX_PAGES:10}
+    page-delay-ms: ${STEAM_PAGE_DELAY_MS:500}
+  analysis:
+    provider: ${ANALYSIS_PROVIDER:disabled}
+    model: ${OPENAI_MODEL:gpt-4o-mini-2024-07-18}
+    max-reviews: ${ANALYSIS_MAX_REVIEWS:25}
+    retry-delay-ms: ${ANALYSIS_RETRY_DELAY_MS:500}

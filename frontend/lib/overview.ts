@@ -1,0 +1,14 @@
+import {Game,parseGame,Run,parseRun} from './api';
+import {AnalysisStatus,parseAnalysisStatus} from './analysis';
+import {IssuePage,parseIssuePage} from './issues';
+export type Day={date:string;recommended:number;notRecommended:number};
+export type Overview={mode:'LIVE'|'SYNTHETIC_DEMO';game:Game;days:number;periodStart:string;asOf:string;imported:number;metrics:{reviews:number;recommended:number;positiveRatio:number|null;previousReviews:number;previousPositiveRatio:number|null;reviewChangePercent:number|null;positiveChangePoints:number|null};daily:Day[];categories:{category:string;count:number}[];analysis:AnalysisStatus;ingestion:Run|null;issues:IssuePage;highSeverityIssues:number};
+function obj(v:unknown):Record<string,unknown>{if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Invalid overview response.');return v as Record<string,unknown>;}
+function str(v:unknown):string{if(typeof v!=='string')throw Error('Invalid overview text.');return v;}
+function num(v:unknown,min=0,max=Infinity):number{if(typeof v!=='number'||!Number.isFinite(v)||v<min||v>max)throw Error('Invalid overview metric.');return v;}
+function count(v:unknown){const n=num(v);if(!Number.isSafeInteger(n))throw Error('Invalid count.');return n;}
+function date(v:unknown){const s=str(v);if(!Number.isFinite(Date.parse(s)))throw Error('Invalid overview date.');return s;}
+function nullable(v:unknown,min:number,max=Infinity){return v===null?null:num(v,min,max);}
+export function parseOverview(v:unknown):Overview{const d=obj(v),m=obj(d.metrics);if(d.mode!=='LIVE'&&d.mode!=='SYNTHETIC_DEMO')throw Error('Unknown overview mode.');if(!Array.isArray(d.daily)||!Array.isArray(d.categories))throw Error('Invalid chart data.');const days=count(d.days);if(![7,30,90].includes(days))throw Error('Invalid range.');return {mode:d.mode,game:parseGame(d.game),days,periodStart:date(d.periodStart),asOf:date(d.asOf),imported:count(d.imported),metrics:{reviews:count(m.reviews),recommended:count(m.recommended),positiveRatio:nullable(m.positiveRatio,0,1),previousReviews:count(m.previousReviews),previousPositiveRatio:nullable(m.previousPositiveRatio,0,1),reviewChangePercent:nullable(m.reviewChangePercent,-100),positiveChangePoints:nullable(m.positiveChangePoints,-100,100)},daily:d.daily.map(v=>{const a=obj(v);return {date:date(a.date),recommended:count(a.recommended),notRecommended:count(a.notRecommended)};}),categories:d.categories.map(v=>{const a=obj(v);return {category:str(a.category),count:count(a.count)};}),analysis:parseAnalysisStatus(d.analysis),ingestion:parseRun(d.ingestion),issues:parseIssuePage(d.issues),highSeverityIssues:count(d.highSeverityIssues)};}
+export function percent(v:number|null){return v===null?'—':`${(v*100).toFixed(1)}%`;}
+export function change(v:number|null,unit='%'){return v===null?'No previous-period baseline':`${v>0?'+':''}${v.toFixed(1)}${unit} vs previous period`;}

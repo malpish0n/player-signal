@@ -1,0 +1,8 @@
+// @vitest-environment jsdom
+import {afterEach,expect,it,vi} from 'vitest';
+import {cleanup,render,screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {AccountForm} from './account-form';
+afterEach(()=>{cleanup();vi.unstubAllGlobals();});
+it('keeps local-mode data accessible without offering a fake registration',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({enabled:false,user:null,csrfToken:null})));render(<AccountForm register/>);await screen.findByText('Local mode is active');expect(screen.queryByLabelText('Password')).toBeNull();expect(screen.getByRole('link',{name:'Return to your games →'}).getAttribute('href')).toBe('/');});
+it('submits credentials with CSRF and shows a persistent error',async()=>{const fetch=vi.fn().mockResolvedValueOnce(Response.json({enabled:true,user:null,csrfToken:'token'})).mockResolvedValueOnce(Response.json({enabled:true,user:null,csrfToken:'token'})).mockResolvedValueOnce(Response.json({message:'Email or password is incorrect.'},{status:401}));vi.stubGlobal('fetch',fetch);render(<AccountForm/>);await screen.findByLabelText('Email');await userEvent.type(screen.getByLabelText('Email'),'test@example.test');await userEvent.type(screen.getByLabelText('Password'),'test-passphrase');await userEvent.click(screen.getByRole('button',{name:'Sign in'}));await screen.findByRole('alert');expect(fetch.mock.calls[2][0]).toBe('/api/auth/login');expect(new Headers(fetch.mock.calls[2][1].headers).get('X-CSRF-TOKEN')).toBe('token');expect(screen.getByRole('button',{name:'Sign in'}).hasAttribute('disabled')).toBe(false);});

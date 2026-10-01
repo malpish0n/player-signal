@@ -5,6 +5,7 @@ import { api, Game, Run, ReviewPage, message, parseGame, parseRun, parseReviews 
 
 import { AnalysisStatus, parseAnalysisStatus, parseAnalysisRun } from '@/lib/analysis';
 import { ReviewExport } from "@/app/review-export";
+import { AnalysisHistory } from "@/app/analysis-history";
 import { AnalysisResult } from '@/app/analysis-result';
 
 export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", to = "", processingOnly = false }: { id: string; page: string; language: string; vote: string; q?: string; from?: string; to?: string; processingOnly?: boolean }) {
@@ -128,6 +129,7 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
         <p className="review-text">{review.reviewText || "(No written review text)"}</p>
         <div className="muted">Steam review #{review.steamRecommendationId} · {review.votesUp} helpful votes</div>
         <AnalysisResult analysis={review.analysis} />
+        <AnalysisHistory gameId={id} reviewId={review.id} currentId={review.analysis?.id??null}/>
       </article>)}</div>
       {reviews && <nav className="pagination" aria-label="Review pages">
         {reviews.page > 0 && <Link className="button" href={pageUrl(reviews.page - 1)}>Previous</Link>}

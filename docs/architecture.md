@@ -91,3 +91,7 @@ The issue list applies category and severity predicates to both count and data q
 ## UTC review date filters
 
 ReviewDateRange validates calendar dates and produces an inclusive UTC start and exclusive next-day UTC end. ReviewRepository binds OffsetDateTime parameters, independently of database/JVM local timezone. Both count and row queries share the predicates; export reuses the same repository for every page under its repeatable-read transaction. A missing bound leaves that side open. No schema change or data rewrite is needed. Browser controls and rendered review dates explicitly use UTC, and query parameters carry bounds through pagination and export.
+
+## Analysis history UI
+
+The review list mounts a history reader only when requested. It uses the existing workspace/game/review-scoped history endpoint and validates each snapshot before rendering. Closing aborts pending reads; reopening fetches fresh history. The existing current-analysis ID identifies the current version in this view; other entries are labeled historical. Source snapshots render as escaped text, independently of the current review body. API order is creation time descending; timestamps in the UI are explicitly labeled last-updated UTC. No server contract or persistence change is needed.

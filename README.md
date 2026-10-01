@@ -145,3 +145,7 @@ On the Reviews page, apply language, recommendation or text filters, then choose
 The Issues page supports category and minimum-severity filters, plus sorting by severity, mention count, growth or last seen. Settings are URL-addressable and preserved while paging. Growth uses the saved snapshot’s comparison windows; missing baselines sort last rather than being treated as zero growth.
 
 Reviews and CSV export also support **From (UTC)** and **To (UTC, inclusive)**. The end date includes the whole day; either boundary may be left empty. Dates refer to when the Steam review was created. Applying or clearing filters starts on the first page, while pagination preserves the selected range.
+
+## Inspect analysis history
+
+Each review offers **View analysis history**. Expand it to load saved versions, identify the version used by the current review view, inspect model/prompt/provider metadata and reopen the exact input text and its SHA-256 hash. Failed/skipped versions keep their status and reason. Closing and reopening refreshes history; opening history never starts an analysis or provider call. A review without saved versions shows an explicit empty state. Retries update their existing version rather than producing an attempt-by-attempt audit log.

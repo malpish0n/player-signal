@@ -27,10 +27,10 @@ public class IssueService {
         WHERE r.game_id=? AND a.provider=? AND a.model=? AND a.prompt_version=? AND a.status='SUCCEEDED'
           AND a.result->>'isActionable'='true' AND trim(a.result->>'normalizedIssue')<>'' AND a.result->>'primaryCategory'<>'POSITIVE'
         """;}
-    private Object[] args(UUID game) {return new Object[]{game,AnalysisSettings.PROVIDER,settings.model(),AnalysisSettings.PROMPT_VERSION};}
+    private Object[] args(UUID game) {return new Object[]{game,settings.provider(),settings.model(),AnalysisSettings.PROMPT_VERSION};}
     private InputState state(JdbcTemplate db,UUID game) {
         return db.queryForObject("SELECT count(*),md5(coalesce(string_agg(a.id::text || r.created_at_steam::text,',' ORDER BY a.id),'') || ? ) " + eligible(),
-            (rs,n)->new InputState(rs.getLong(1),rs.getString(2)),settings.model()+AnalysisSettings.PROMPT_VERSION,game,AnalysisSettings.PROVIDER,settings.model(),AnalysisSettings.PROMPT_VERSION);
+            (rs,n)->new InputState(rs.getLong(1),rs.getString(2)),settings.model()+AnalysisSettings.PROMPT_VERSION,game,settings.provider(),settings.model(),AnalysisSettings.PROMPT_VERSION);
     }
     private Snapshot snapshot(UUID game) {
         InputState current=state(jdbc,game);

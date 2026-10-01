@@ -159,3 +159,11 @@ The **Download report (.md)** button in Before & after saves the displayed compa
 ### Saved updates
 
 Open **Updates** in a game to save a release name and UTC date, edit it, or open a 7/30/90-day comparison. Planned dates are allowed, but comparisons require complete periods. Up to 100 updates per game are supported. Concurrent edits are rejected with a reload prompt. These are manually entered records; Steam patch-note ingestion, deletion and automatic patch analysis are not implemented.
+
+### No paid AI mode
+
+New configuration defaults to `ANALYSIS_PROVIDER=local`: conservative English phrase rules applied to real review text, with exact evidence and low, uncalibrated confidence. This is **not AI**. Non-English inputs are skipped; unmatched English text is unclassified, not a reliable sentiment prediction. Existing `.env` values override defaults.
+
+Optional local model: install/configure Ollama separately, use an installed non-cloud model with `ANALYSIS_PROVIDER=ollama`, `ANALYSIS_MODEL=<model>` and `OLLAMA_URL=http://host.docker.internal:11434` for Docker Desktop (native backend: `http://127.0.0.1:11434`). No model is automatically downloaded. Missing local services fail visibly; there is no cloud fallback. Local model quality and hardware requirements must be evaluated before relying on results. The adapter follows [Ollama chat](https://docs.ollama.com/api/chat) and [structured output](https://docs.ollama.com/capabilities/structured-outputs) contracts.
+
+OpenAI is blocked unless **both** `ANALYSIS_PROVIDER=openai` and `ALLOW_PAID_AI=true` are explicitly configured, with a server key and model. Leave `ALLOW_PAID_AI=false` for this project. Changing providers creates a new analysis identity; prior evidence/history is preserved and clusters require rebuilding.

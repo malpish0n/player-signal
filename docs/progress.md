@@ -191,3 +191,10 @@ Later: complete F public beta; G paid SaaS.
 - Configurable monthly attempt cap and rolling sync limit; lookup requests are bounded. Token usage records successful provider responses; absent usage is not presented as zero cost. Processing shows workspace-wide counters.
 - Static review covered transaction boundaries, worker workspace lookup, retry paths, endpoint ownership and response parsing. Automated checks/builds were deliberately not run per the owner's new instruction; the new code is not yet deployed or runtime-verified.
 - No paid provider calls made. Monetary estimates and plan-specific entitlements are not implemented by these counters.
+
+## Local-only analysis options
+
+- Added a production phrase-rule analyzer (separate from fixtures), with exact source quotes, conservative English-only behavior, explicit rule provenance and low heuristic confidence. Unmatched reviews are unclassified; other languages are skipped in rule mode.
+- Added optional local Ollama chat/JSON-schema adapter using the existing strict evidence validator. Local origin allowlist, no redirects, no cloud-model names and no cloud fallback. OpenAI now requires an additional ALLOW_PAID_AI opt-in, default false.
+- Current provider/model participates in cache, history and issue eligibility; old analysis versions remain intact. Defaults/documentation favor local rules. Existing .env overrides are preserved.
+- Reviewed code paths and official Ollama contracts manually. No tests/builds, model downloads, provider calls or deployment performed. Local model installation and quality evaluation are still pending; this is not a claim of semantic-analysis equivalence.

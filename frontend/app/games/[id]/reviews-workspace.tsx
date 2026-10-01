@@ -100,12 +100,12 @@ export function ReviewsWorkspace({ id, page, language, vote, q = "", from = "", 
       </>}
 
     </section>
-    <section className="panel compact" aria-label="AI analysis">
-      <h2>AI analysis</h2>
+    <section className="panel compact" aria-label="Review analysis">
+      <h2>Review analysis</h2>
       {!analysis ? <p role="status">Loading analysis status…</p> : <>
         <p>{analysis.counts.succeeded} analyzed · {analysis.counts.pending} pending · {analysis.counts.running} running · {analysis.counts.skipped} skipped · {analysis.counts.failed} failed</p>
-        {!analysis.available && <p className="warning">OpenAI is not configured. Imported reviews remain pending. <Link href="/demo">Explore the synthetic demo →</Link></p>}
-        <p className="muted">{analysis.model} · Up to {analysis.maxReviewsPerRun} reviews per batch, across all pages and filters. Model suggestions require human review.</p>
+        {!analysis.available && <p className="warning">Analysis is disabled or not configured. Imported reviews remain pending. <Link href="/demo">Explore the synthetic demo →</Link></p>}
+        <p className="muted">{analysis.provider === "local-rules" ? "Local English phrase rules, not AI. Low-confidence matches need review; unclassified is not neutral sentiment. " : ""}{analysis.model} · Up to {analysis.maxReviewsPerRun} reviews per batch, across all pages and filters. Model suggestions require human review.</p>
         {analysis.latestRun && <p role="status">Latest batch: {analysis.latestRun.status} · {analysis.latestRun.processed} processed · {analysis.latestRun.cached} reused{analysis.latestRun.error ? ` · ${analysis.latestRun.error}` : ''}</p>}
         <div className="analysis-actions"><button disabled={!analysis.available || analyzing || analysis.latestRun?.status === 'RUNNING' || !analysis.counts.pending} onClick={() => void analyze()}>Analyze next batch</button>
         {analysis.counts.failed > 0 && <button disabled={!analysis.available || analyzing || analysis.latestRun?.status === 'RUNNING'} onClick={() => void analyze(true)}>Retry failed + pending</button>}</div>

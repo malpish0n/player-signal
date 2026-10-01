@@ -26,7 +26,7 @@ public class UsageService {
    case "GAME_LOOKUP" -> {start=now.minusSeconds(3600);limit=20;}
    default -> throw new IllegalArgumentException("Unknown usage action");}
   long used=jdbc.queryForObject("SELECT count(*) FROM playersignal.usage_event WHERE workspace_id=? AND action=? AND created_at>=?",Long.class,workspace,action,java.sql.Timestamp.from(start));
-  if(used>=limit)throw new ApiException(429,"WORKSPACE_LIMIT",action.equals("ANALYSIS")?"Workspace monthly AI attempt limit reached. Retries count; cached and skipped reviews do not. The quota resets next UTC month.":"Workspace request limit reached. Try again later.");
+  if(used>=limit)throw new ApiException(429,"WORKSPACE_LIMIT",action.equals("ANALYSIS")?"Workspace monthly analysis attempt limit reached. Retries count; cached and skipped reviews do not. The quota resets next UTC month.":"Workspace request limit reached. Try again later.");
   UUID id=UUID.randomUUID();jdbc.update("INSERT INTO playersignal.usage_event(id,workspace_id,game_id,analysis_id,action,model) VALUES (?,?,?,?,?,?)",id,workspace,game,analysis,action,model);return id;
  }
  public void finish(UUID id,boolean success,long input,long output){jdbc.update("UPDATE playersignal.usage_event SET status=?,input_tokens=?,output_tokens=?,finished_at=now() WHERE id=? AND status='RESERVED'",success?"SUCCEEDED":"FAILED",Math.max(0,input),Math.max(0,output),id);}

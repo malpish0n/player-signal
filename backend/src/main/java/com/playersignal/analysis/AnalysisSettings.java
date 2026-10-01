@@ -11,9 +11,11 @@ public record AnalysisSettings(String mode, String model, int maxReviews, int re
                             @Value("${playersignal.analysis.model:gpt-4o-mini-2024-07-18}") String model,
                             @Value("${playersignal.analysis.max-reviews:25}") int maxReviews,
                             @Value("${playersignal.analysis.retry-delay-ms:500}") int retryDelayMs) {
-        if (!mode.equals("disabled") && !mode.equals("openai")) throw new IllegalArgumentException("Analysis provider must be disabled or openai");
+        if (!java.util.Set.of("disabled","openai","local","ollama").contains(mode)) throw new IllegalArgumentException("Unknown analysis provider");
         if (model.isBlank() || maxReviews < 1 || maxReviews > 100 || retryDelayMs < 0 || retryDelayMs > 30000)
             throw new IllegalArgumentException("Invalid analysis limits or model");
-        this.mode = mode; this.model = model; this.maxReviews = maxReviews; this.retryDelayMs = retryDelayMs;
+        if(mode.equals("ollama") && (model.isBlank()||model.toLowerCase(java.util.Locale.ROOT).contains("cloud")))throw new IllegalArgumentException("Choose an installed local model, not a cloud model");
+        this.mode = mode; this.model = mode.equals("local")?"local-rules-v1":model; this.maxReviews = maxReviews; this.retryDelayMs = retryDelayMs;
     }
+    public String provider(){return mode.equals("local")?"local-rules":mode.equals("ollama")?"ollama":"openai";}
 }

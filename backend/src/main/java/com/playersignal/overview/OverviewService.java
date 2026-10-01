@@ -42,7 +42,7 @@ public class OverviewService {
             JOIN playersignal.review_analysis a ON a.review_id=r.id AND a.input_hash=r.input_hash
             WHERE r.game_id=? AND r.created_at_steam>=? AND r.created_at_steam<? AND a.status='SUCCEEDED' AND a.provider=? AND a.model=? AND a.prompt_version=?
             GROUP BY category ORDER BY n DESC,category
-            """,(rs,n)->new Category(rs.getString("category"),rs.getLong("n")),game,Timestamp.from(start),Timestamp.from(now),AnalysisSettings.PROVIDER,settings.model(),AnalysisSettings.PROMPT_VERSION);
+            """,(rs,n)->new Category(rs.getString("category"),rs.getLong("n")),game,Timestamp.from(start),Timestamp.from(now),settings.provider(),settings.model(),AnalysisSettings.PROMPT_VERSION);
         var status=analysis.status(game);var issuePage=issues.list(game,0,5);
         long high=jdbc.queryForObject("SELECT count(*) FROM playersignal.issue_cluster WHERE game_id=? AND (metrics->>'severityScore')::double precision>=75",Long.class,game);
         return new Overview("LIVE",selected,days,start,now,status.counts().total(),metrics,fillDays(start,now,present),categories,status,ingestion.latest(game),issuePage,high);

@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
-@Component
 public class OpenAiReviewAnalyzer implements ReviewAnalyzer {
     private final AnalysisSettings settings;
     private final String key;

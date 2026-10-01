@@ -33,12 +33,12 @@ public class AnalysisService {
     }
     public Status status(UUID gameId) {
         games.get(gameId);
-        return new Status(analyzer.available(), AnalysisSettings.PROVIDER, settings.model(), AnalysisSettings.PROMPT_VERSION,
+        return new Status(analyzer.available(), settings.provider(), settings.model(), AnalysisSettings.PROMPT_VERSION,
                 settings.maxReviews(), repository.counts(gameId), repository.latest(gameId));
     }
     public AnalysisRepository.Run start(UUID gameId, boolean retryFailed) {
         var game = games.get(gameId);
-        if (!analyzer.available()) throw new ApiException(503, "ANALYSIS_NOT_CONFIGURED", "Configure ANALYSIS_PROVIDER=openai and OPENAI_API_KEY on the backend. The separate demo works without a key.");
+        if (!analyzer.available()) throw new ApiException(503, "ANALYSIS_NOT_CONFIGURED", "Select local analysis, or configure an installed Ollama model. Paid providers require explicit opt-in.");
         if (!capacity.tryAcquire()) throw new ApiException(409, "ANALYSIS_BUSY", "An analysis is already running. Wait and retry.");
         DatabaseJobLock lock = null;
         AnalysisRepository.Run run = null;
@@ -65,6 +65,7 @@ public class AnalysisService {
                 if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                 UUID id = repository.begin(lock.jdbc, source, run.id());
                 String skip = AnalysisPolicy.skipReason(source.text());
+                if(settings.mode().equals("local") && !source.language().equals("english"))skip="Local rules support English only; use a local language model for other languages.";
                 if (skip != null) { complete(lock, id, run.id(), "SKIPPED", null, null, skip, null); continue; }
                 var cached = repository.cached(lock.jdbc, run.gameId(), source);
                 if (cached != null) {

@@ -27,7 +27,7 @@ public class AnalysisRepository {
     public AnalysisRepository(JdbcTemplate jdbc, ObjectMapper mapper, AnalysisSettings settings) {
         this.jdbc = jdbc; this.mapper = mapper; this.settings = settings;
     }
-    private Object[] identity() { return new Object[]{AnalysisSettings.PROVIDER, settings.model(), AnalysisSettings.PROMPT_VERSION}; }
+    private Object[] identity() { return new Object[]{settings.provider(), settings.model(), AnalysisSettings.PROMPT_VERSION}; }
     private String join() {
         return " LEFT JOIN playersignal.review_analysis a ON a.review_id=r.id AND a.input_hash=r.input_hash AND a.provider=? AND a.model=? AND a.prompt_version=? ";
     }
@@ -49,11 +49,11 @@ public class AnalysisRepository {
                 " WHERE r.game_id=? AND (a.id IS NULL" + (retryFailed ? " OR a.status='FAILED'" : "") +
                 ") ORDER BY r.created_at_steam DESC,r.id LIMIT ?", (rs, n) -> new Source(rs.getObject("id", UUID.class),
                 rs.getString("review_text"), rs.getString("language"), rs.getString("input_hash")),
-                AnalysisSettings.PROVIDER, settings.model(), AnalysisSettings.PROMPT_VERSION, gameId, settings.maxReviews());
+                settings.provider(), settings.model(), AnalysisSettings.PROMPT_VERSION, gameId, settings.maxReviews());
     }
     public Run createRun(UUID gameId) {
         return jdbc.queryForObject("INSERT INTO playersignal.analysis_run(id,game_id,provider,model,prompt_version,status) VALUES (?,?,?,?,?,'RUNNING') RETURNING *",
-                this::run, UUID.randomUUID(), gameId, AnalysisSettings.PROVIDER, settings.model(), AnalysisSettings.PROMPT_VERSION);
+                this::run, UUID.randomUUID(), gameId, settings.provider(), settings.model(), AnalysisSettings.PROMPT_VERSION);
     }
     public Run latest(UUID gameId) {
         return jdbc.query("SELECT * FROM playersignal.analysis_run WHERE game_id=? ORDER BY started_at DESC,id DESC LIMIT 1", this::run, gameId).stream().findFirst().orElse(null);
@@ -92,7 +92,7 @@ public class AnalysisRepository {
                     WHERE playersignal.review_analysis.status='FAILED'
                 RETURNING id
                 """, UUID.class, UUID.randomUUID(), source.reviewId(), runId, source.hash(), source.text(), source.language(),
-                AnalysisSettings.PROVIDER, settings.model(), AnalysisSettings.PROMPT_VERSION);
+                settings.provider(), settings.model(), AnalysisSettings.PROMPT_VERSION);
     }
     public void attempt(JdbcTemplate connection, UUID id) {
         connection.update("UPDATE playersignal.review_analysis SET attempts=attempts+1,updated_at=now() WHERE id=? AND status='RUNNING'", id);
@@ -106,7 +106,7 @@ public class AnalysisRepository {
                 WHERE r.game_id=? AND a.input_hash=? AND a.provider=? AND a.model=? AND a.prompt_version=? AND a.status='SUCCEEDED'
                 ORDER BY a.created_at,a.id LIMIT 1
                 """, (rs, n) -> new Cached(rs.getObject("id", UUID.class), classification(rs.getString("result")), rs.getString("response_model")),
-                gameId, source.hash(), AnalysisSettings.PROVIDER, settings.model(), AnalysisSettings.PROMPT_VERSION).stream().findFirst().orElse(null);
+                gameId, source.hash(), settings.provider(), settings.model(), AnalysisSettings.PROMPT_VERSION).stream().findFirst().orElse(null);
     }
     public void complete(JdbcTemplate connection, UUID id, UUID runId, String status, ReviewAnalyzer.Output output,
                          UUID cachedFrom, String skipReason, String error) {
